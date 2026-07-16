@@ -3,11 +3,16 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
+// Clase para el campo de texto personalizado
+
 class CustomTextField extends StatelessWidget {
   final String label;
   final String hintText;
   final bool isPassword;
   final TextEditingController? controller;
+  final String? Function(String?)? validator;
+  final String? helperText;
+  final TextInputType? keyboardType;
 
   const CustomTextField({
     super.key,
@@ -15,6 +20,9 @@ class CustomTextField extends StatelessWidget {
     required this.hintText,
     this.isPassword = false,
     this.controller,
+    this.validator,
+    this.helperText,
+    this.keyboardType,
   });
 
   @override
@@ -33,15 +41,23 @@ class CustomTextField extends StatelessWidget {
             ),
           ),
         ),
-        TextField(
+        TextFormField(
           controller: controller,
           obscureText: isPassword,
+          validator: validator,
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: GoogleFonts.nunito(
               fontWeight: FontWeight.w500,
               fontSize: 15,
               color: AppColors.hintText,
+            ),
+            // Agregamos el helperText para los mensajitos de abajo como en el Figma
+            helperText: helperText,
+            helperStyle: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textSecondary,
             ),
           ),
         ),
