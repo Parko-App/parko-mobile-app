@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/text_field.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../home/presentation/screens/home_screen.dart';
+import '../../data/datasources/auth_remote_datasource.dart';
+import '../../data/repositories/auth_repository_impl.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -24,6 +28,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Variable para manejar el estado de carga
   bool _isLoading = false;
+
+  final _authRepository = AuthRepositoryImpl(
+    remoteDataSource: AuthRemoteDataSourceImpl(client: http.Client()),
+  );
 
   @override
   void dispose() {
@@ -145,33 +153,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     
                     // Botón de login
                     ElevatedButton(
-                      onPressed: _isLoading 
-                        ? null 
-                        : () {
-                          // Al presionar el botón, validamos todos los campos del formulario
-                          if (_formKey.currentState!.validate()) {
-                            setState(() {
-                              _isLoading = true;
-                            });
+                      onPressed: _isLoading
+                        ? null
+                        : () async {
+                          if (!_formKey.currentState!.validate()) return;
 
-                            // Mostramos el mensaje visual (SnackBar)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Iniciando sesión...'),
-                                backgroundColor: AppColors.primary,
-                                duration: Duration(seconds: 2),
-                              ),
+                          setState(() => _isLoading = true);
+
+                          try {
+                            await _authRepository.login(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text,
                             );
 
-                            // una demorita de 2 segundos
-                            Future.delayed(const Duration(seconds: 2), () {
-                              if (mounted) {
-                                setState(() {
-                                  _isLoading = false;
-                                });
-                                print("Login intentado para: ${_emailController.text}");
-                              }
-                            });
+                            if (context.mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().replaceFirst('Exception: ', '')),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
                           }
                         },
                       child: _isLoading 

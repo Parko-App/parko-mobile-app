@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../core/network/api_config.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -7,7 +8,9 @@ abstract class AuthRemoteDataSource {
     required String name,
     required String email,
     required String password,
-    String? legajo,
+    required String studentId,
+    required String institutionalDomain,
+    required bool termsAccepted,
   });
 }
 
@@ -21,34 +24,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String name,
     required String email,
     required String password,
-    String? legajo,
+    required String studentId,
+    required String institutionalDomain,
+    required bool termsAccepted,
   }) async {
-    // Acá va al back? ponele vo
-    final url = Uri.parse('');
+    final url = Uri.parse(ApiConfig.userEndpoint);
 
+    http.Response response;
     try {
-      final response = await client.post(
+      response = await client.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'name': name,
+          'fullName': name,
           'email': email,
+          'studentId': studentId,
           'password': password,
-          'legajo': legajo,
+          'institutionalDomain': institutionalDomain,
+          'termsAndConditionsAccepted': termsAccepted,
         }),
       );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // Si el backend responde bien, parseamos el JSON al modelo
-        return UserModel.fromJson(jsonDecode(response.body));
-      } else {
-        // Si falla, tiramos una excepción, basico basico
-        throw Exception('Error al registrar usuario: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error de red o de servidor: $e');
+    } catch (_) {
+      throw Exception('No se pudo conectar con el servidor');
     }
+
+    if (response.statusCode == 201) {
+      return UserModel.fromJson(jsonDecode(response.body));
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  String _extractErrorMessage(http.Response response) {
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['message'] != null) {
+        return body['message'] as String;
+      }
+    } catch (_) {}
+    return 'Error al registrar usuario (${response.statusCode})';
   }
 }

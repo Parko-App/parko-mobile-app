@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../home/presentation/screens/home_screen.dart';
+import '../../data/datasources/auth_remote_datasource.dart';
+import '../../data/repositories/auth_repository_impl.dart';
 import '../widgets/text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -21,10 +25,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _legajoController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   
   // Estado para el checkbox de términos
   bool _acceptTerms = false;
   bool _isLoading = false;
+
+  final _authRepository = AuthRepositoryImpl(
+    remoteDataSource: AuthRemoteDataSourceImpl(client: http.Client()),
+  );
 
   @override
   void dispose() {
@@ -32,6 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _legajoController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -136,6 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _legajoController,
                       helperText: 'Solo si sos alumno con legajo asignado',
                       keyboardType: TextInputType.number,
+                      validator: (value) => AppValidators.legajo(value),
                     ),
                     
                     const SizedBox(height: 20),
@@ -148,9 +159,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _passwordController,
                       validator: (value) => AppValidators.password(value),
                     ),
-                    
+
+                    const SizedBox(height: 20),
+
+                    CustomTextField(
+                      label: 'Confirmar contraseña',
+                      hintText: '••••••••',
+                      isPassword: true,
+                      controller: _confirmPasswordController,
+                      validator: (value) => AppValidators.confirmPassword(value, _passwordController.text),
+                    ),
+
                     const SizedBox(height: 24),
-                    
+
                     // Checkbox de términos y condiciones
                     Row(
                       children: [
@@ -188,26 +209,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Botón de crear cuenta
                     ElevatedButton(
                       onPressed: (_isLoading || !_acceptTerms)
-                        ? null 
-                        : () {
-                          if (_formKey.currentState!.validate()) {
-                            setState(() => _isLoading = true);
-                            
-                            // Mensajito de éxito (simulado por ahora)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Creando cuenta...'),
-                                backgroundColor: AppColors.primary,
-                              ),
+                        ? null
+                        : () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          setState(() => _isLoading = true);
+
+                          try {
+                            await _authRepository.register(
+                              name: _nameController.text.trim(),
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text,
+                              termsAccepted: _acceptTerms,
+                              legajo: _legajoController.text.trim().isEmpty
+                                  ? null
+                                  : _legajoController.text.trim(),
                             );
-                            
-                            // Simulamos demora
-                            Future.delayed(const Duration(seconds: 2), () {
-                              if (mounted) {
-                                setState(() => _isLoading = false);
-                                print("Registro exitoso!");
-                              }
-                            });
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Cuenta creada con éxito'),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().replaceFirst('Exception: ', '')),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
                           }
                         },
                       child: _isLoading 
