@@ -1,11 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/text_field.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../home/presentation/screens/home_screen.dart';
+import '../../data/datasources/auth_remote_datasource.dart';
+import '../../data/repositories/auth_repository_impl.dart';
+import 'register_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+
+  // La GlobalKey nos permite acceder al estado del Form desde fuera (ej. desde el botón)
+  final _formKey = GlobalKey<FormState>();
+  
+  // Controladores para capturar el texto ingresado
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // Variable para manejar el estado de carga
+  bool _isLoading = false;
+
+  final _authRepository = AuthRepositoryImpl(
+    remoteDataSource: AuthRemoteDataSourceImpl(client: http.Client()),
+  );
+
+  @override
+  void dispose() {
+    // limpiar los controladores cuando el widget se destruye
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,131 +61,173 @@ class LoginScreen extends StatelessWidget {
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 40),
-                  
-                  // Contenedor del logo
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Image(
-                        image: AssetImage('assets/images/logo.png'),
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.contain,
+              child: Form(
+                key: _formKey, // Asignamos la llave al Form
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 40),
+                    
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Parko Title
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      "Parko",
+                      child: const Center(
 
-                      // Acá uso el esilo de texto definido en AppTheme
-                      style: AppTheme.lightTheme.textTheme.displayLarge!.copyWith(
-                      /*GoogleFonts.nunito(
-                        color: const Color.fromRGBO(11, 61, 145, 1),
-                        fontSize: 50,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,*/
+                        // LOGO DE PARKOVICH
+                        child: Image(
+                          image: AssetImage('assets/images/logo.png'),
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  // textito
-                  Text(
-                    "Encontrá y pagá tu estacionamiento",
-                    style: GoogleFonts.inter(
-                      color: const Color.fromRGBO(102, 102, 102, 1),
-                      fontSize: 15,
-                      height: 1.0,
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 48),
-                  
-                  // Campos
-                  const CustomTextField(
-                    label: 'Email o legajo',
-                    hintText: 'legajo@dominio.frc.utn.edu.ar',
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  const CustomTextField(
-                    label: 'Contraseña',
-                    hintText: '••••••••',
-                    isPassword: true,
-                  ),
-                  
-                  // Si se olvidó la clave el wachín
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
+                    
+                    const SizedBox(height: 24),
+                    
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
                       child: Text(
-                        '¿Olvidaste tu contraseña?',
-                        style: GoogleFonts.nunito(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
+                        "Parko",
+                        style: AppTheme.lightTheme.textTheme.displayLarge,
                       ),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Login Button
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Iniciar sesión'),
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Botón para registrarse
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        '¿No tenés cuenta? ',
-                        style: TextStyle(
-                          // fontFamily: 'Inter',
-                          color: AppColors.textSecondary,
-                        ),
+
+                    // textito
+                    Text(
+                      "Encontrá y pagá tu estacionamiento",
+                      style: GoogleFonts.inter(
+                        color: const Color.fromRGBO(102, 102, 102, 1),
+                        fontSize: 15,
+                        height: 1.0,
                       ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          'Registrate',
-                          style: TextStyle(
-                            // fontFamily: 'Inter',
+                    ),
+                    
+                    const SizedBox(height: 48),
+                    
+                    // campo de email
+                    CustomTextField(
+                      label: 'Email o legajo',
+                      hintText: 'legajo@dominio.frc.utn.edu.ar',
+                      controller: _emailController,
+                      validator: (value) => AppValidators.required(value, 'email o legajo'),
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // campo de contraseña
+                    CustomTextField(
+                      label: 'Contraseña',
+                      hintText: '••••••••',
+                      isPassword: true,
+                      controller: _passwordController,
+                      validator: (value) => AppValidators.required(value, 'contraseña'),
+                    ),
+                    
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {},
+                        child: Text(
+                          '¿Olvidaste tu contraseña?',
+                          style: GoogleFonts.nunito(
                             fontWeight: FontWeight.w700,
                             color: AppColors.primary,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Botón de login
+                    ElevatedButton(
+                      onPressed: _isLoading
+                        ? null
+                        : () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          setState(() => _isLoading = true);
+
+                          try {
+                            await _authRepository.login(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text,
+                            );
+
+                            if (context.mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().replaceFirst('Exception: ', '')),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                          }
+                        },
+                      child: _isLoading 
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Iniciar sesión'),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          '¿No tenés cuenta? ',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            );
+                          },
+                          child: const Text(
+                            'Registrate',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
