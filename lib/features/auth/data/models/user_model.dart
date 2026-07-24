@@ -6,6 +6,7 @@ class UserModel extends User {
     required super.name,
     required super.email,
     super.legajo,
+    super.balance,
   });
 
   // Crea un UserModel a partir de un Map (JSON) que viene del backend.
@@ -15,6 +16,7 @@ class UserModel extends User {
       name: json['fullName'] ?? '',
       email: json['email'] ?? '',
       legajo: json['studentId'],
+      balance: json['balance'],
     );
   }
 

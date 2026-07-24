@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/text_field.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/utils/validators.dart';
-import '../../../home/presentation/screens/home_screen.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import 'register_screen.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -161,24 +162,45 @@ class _LoginScreenState extends State<LoginScreen> {
                           setState(() => _isLoading = true);
 
                           try {
+                            String UUID = 'das';
+                            // 1. Primero logueamos en Firebase a través del repo
                             await _authRepository.login(
                               email: _emailController.text.trim(),
                               password: _passwordController.text,
                             );
 
                             if (context.mounted) {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(builder: (context) => const HomeScreen()),
-                                (route) => false,
-                              );
+                              // 2. El AuthCubit se encarga de ir al backend real a buscar el nombre
+                              /// hardcodeo el UUID hasta poder solucionar
+                              if(_emailController.text == "admin@admin.frc.utn.edu.ar"){
+                                UUID = '8576f95b-fd15-4691-aef7-469d231ed8b6';
+                              }
+                              await context.read<AuthCubit>().login(UUID);
                             }
                           } catch (e) {
                             if (context.mounted) {
+                              // Limpiamos el mensaje de error para que sea más amigable
+                              String errorMessage = e.toString().replaceFirst('Exception: ', '');
+                              
+                              // Traducimos errores comunes de credenciales
+                              if (errorMessage.contains('incorrect, malformed or has expired') || 
+                                  errorMessage.contains('invalid-credential')) {
+                                errorMessage = 'El email o la contraseña son incorrectos';
+                              }
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(e.toString().replaceFirst('Exception: ', '')),
-                                  backgroundColor: Colors.red,
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.error_outline, color: Colors.white),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: Text(errorMessage)),
+                                    ],
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  margin: const EdgeInsets.all(20),
                                 ),
                               );
                             }
@@ -186,6 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (mounted) setState(() => _isLoading = false);
                           }
                         },
+                      
                       child: _isLoading 
                         ? const SizedBox(
                             height: 20,

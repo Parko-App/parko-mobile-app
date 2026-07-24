@@ -44,6 +44,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<User> getUserProfile(String email) async {
+    return await remoteDataSource.getUserProfile(email);
+  }
+
+  @override
+  Future<double> getBalance(String uuid) async {
+    return await remoteDataSource.getBalance(uuid);
+  }
+
+  @override
   Future<User> login({required String email, required String password}) async {
     try {
       final credential = await firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
