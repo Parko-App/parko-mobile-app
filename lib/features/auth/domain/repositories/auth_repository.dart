@@ -15,4 +15,10 @@ abstract class AuthRepository {
     required String email,
     required String password,
   });
+
+  /// Obtiene los datos del usuario desde el backend
+  Future<User> getUserProfile(String token, String firebaseId);
+
+  /// Obtiene el saldo del usuario
+  Future<double> getBalance(String token, String firebaseId);
 }

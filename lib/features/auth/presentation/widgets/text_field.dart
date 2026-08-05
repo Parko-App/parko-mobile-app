@@ -4,8 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 
 // Clase para el campo de texto personalizado
+// Lo pasamos a StatefulWidget para manejar el estado del "ojito" (ver contraseña)
 
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final String label;
   final String hintText;
   final bool isPassword;
@@ -26,6 +27,20 @@ class CustomTextField extends StatelessWidget {
   });
 
   @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  late bool _obscureText;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializamos el estado: si es password, arranca oculto
+    _obscureText = widget.isPassword;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +48,7 @@ class CustomTextField extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            label,
+            widget.label,
             style: GoogleFonts.nunito(
               fontWeight: FontWeight.w800,
               fontSize: 14,
@@ -42,19 +57,32 @@ class CustomTextField extends StatelessWidget {
           ),
         ),
         TextFormField(
-          controller: controller,
-          obscureText: isPassword,
-          validator: validator,
-          keyboardType: keyboardType,
+          controller: widget.controller,
+          obscureText: _obscureText,
+          validator: widget.validator,
+          keyboardType: widget.keyboardType,
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: widget.hintText,
             hintStyle: GoogleFonts.nunito(
               fontWeight: FontWeight.w500,
               fontSize: 15,
               color: AppColors.hintText,
             ),
-            // Agregamos el helperText para los mensajitos de abajo como en el Figma
-            helperText: helperText,
+            // Si es un campo de password, agregamos el ojito al final (suffixIcon)
+            suffixIcon: widget.isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  )
+                : null,
+            helperText: widget.helperText,
             helperStyle: GoogleFonts.inter(
               fontSize: 12,
               color: AppColors.textSecondary,
