@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:parko_mobile_app/features/home/presentation/widgets/patentes_list.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../vehicles/domain/entities/vehicle.dart';
 import '../../../vehicles/domain/repositories/vehicle_repository.dart';
 import '../../../vehicles/presentation/widgets/vehicle_card.dart';
+import '../../../vehicles/presentation/screens/add_vehicle_screen.dart';
 import '../bloc/home_cubit.dart';
 import '../bloc/home_state.dart';
 
@@ -28,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Sacamos el nombre y el ID del AuthCubit global para dárselo al HomeCubit
       create: (context) {
         String userId = "";
+        String? token = "";
         final authState = context.read<AuthCubit>().state;
         if (authState is Authenticated) {
           userId = authState.user.id;
@@ -116,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               Text(
-                                userName,
+                                userName.toUpperCase(),
                                 style: GoogleFonts.nunito(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w900,
@@ -147,7 +151,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Sección: Tus patentes Dinámica
                       _buildPatentesHeader(),
                       const SizedBox(height: 12),
-                      _buildPatentesList(state),
+                      //_buildPatentesList(state),
+                      state is HomeLoaded ? PatentesList(vehicles: state.vehicles) : const SizedBox(),
 
                       const SizedBox(height: 32),
 
@@ -330,41 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPatentesList(HomeState state) {
-    if (state is HomeLoaded && state.vehicles.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.inputFieldBackground,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
-        ),
-        child: Column(
-          children: [
-            const Icon(Icons.directions_car_outlined, color: AppColors.textSecondary, size: 32),
-            const SizedBox(height: 12),
-            Text(
-              "No tenés patentes registradas",
-              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: const Text("+ Agregar mi primera patente"),
-            ),
-          ],
-        ),
-      );
-    }
-    return const SizedBox(
-      child: Row(children: [
-        // hasta acá llegue, falta mostrar lo que trae el back
-        VehicleCard(vehicle: Vehicle(id: "1651561", plate: "AD434NW", brand: "Ford", model: "Focus", active: true)),
-        VehicleCard(vehicle: Vehicle(id: "1651561", plate: "AD434NW", brand: "Ford", model: "Focus", active: true))
-      ],)
 
-    ); // Si hay patentes, se mostrarían acá
-  }
 
   Widget _buildActividadList(HomeState state) {
     if (state is HomeLoaded && state.actividad.isEmpty) {
@@ -440,10 +411,15 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           TextButton(
             onPressed: () async {
-              // Llamamos al logout del Cubit global
+              // 1. Cerramos la sesión en el Cubit (esto ya limpia Firebase)
               await context.read<AuthCubit>().logout();
-              if (mounted) Navigator.pop(context); // Cerramos el dialog
-              // El cambio de pantalla lo maneja el BlocBuilder en main.dart
+              
+              if (mounted) {
+                // 2. Cerramos el diálogo y cualquier pantalla que esté por encima.
+                // Al volver a la "raíz", el main.dart verá que no hay sesión
+                // y mostrará el Login solo.
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
             },
             child: const Text('Salir', style: TextStyle(color: AppColors.error)),
           ),

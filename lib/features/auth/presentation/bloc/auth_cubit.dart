@@ -18,18 +18,15 @@ class AuthCubit extends Cubit<AuthState> {
   /// Este método chequea si ya hay una sesión activa al abrir la app.
   Future<void> checkAuthStatus() async {
     final firebaseUser = _firebaseAuth.currentUser;
-    String UUID = 'asd';
     if (firebaseUser != null) {
       try {
-        // Buscamos el perfil real en el backend
-        /// esto es para poder acceder al usuario en el back hasta solucionar lo del token
-        if(firebaseUser.email == "admin@admin.frc.utn.edu.ar"){
-          UUID = '8576f95b-fd15-4691-aef7-469d231ed8b6';
-        }
-        final user = await _authRepository.getUserProfile(UUID);
+        final token = await firebaseUser.getIdToken();
+        // Buscamos el perfil real en el backend usando el UID de Firebase
+        final user = await _authRepository.getUserProfile(token!, firebaseUser.uid);
         emit(Authenticated(user));
       } catch (e) {
-        // Si el back falla, emitimos error o un usuario básico
+        // Si falla el back, por seguridad deslogueamos de Firebase
+        await logout();
         emit(Unauthenticated());
       }
     } else {
@@ -37,21 +34,66 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Cuando el login es exitoso, actualizamos el estado global.
-  /// Voy a hardcodear con el UUID hasta ver bien como es esto
-  Future<void> login(String uuid) async {
+  /// PROCESO DE LOGIN UNIFICADO
+  Future<void> login(String email, String password) async {
+    // Emitimos carga para resetear cualquier error previo y disparar el listener
+    emit(AuthLoading());
+    
     try {
-      // Pedimos el perfil al backend después de loguear en Firebase
-      final user = await _authRepository.getUserProfile(uuid);
-      emit(Authenticated(user));
+      // 1. Logueamos en Firebase a través del repositorio
+      final userFromFirebase = await _authRepository.login(email: email, password: password);
+      
+      // 2. Buscamos el token fresco
+      final token = await _firebaseAuth.currentUser?.getIdToken();
+      
+      // 3. Traemos el perfil del backend
+      final userFull = await _authRepository.getUserProfile(token!, userFromFirebase.id);
+      
+      // 4. Si todo salió bien, emitimos el éxito
+      emit(Authenticated(userFull));
     } catch (e) {
-      emit(AuthError("Sesión iniciada pero no se encontró el perfil en Parko"));
+      // Limpiamos el mensaje de error del backend
+      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      logout();
     }
   }
 
-  /// Cerrar sesión limpia el estado global.
+  /// PROCESO DE REGISTRO UNIFICADO
+  Future<void> registerUser({
+    required String name,
+    required String email,
+    required String password,
+    required bool termsAccepted,
+    String? legajo,
+  }) async {
+    emit(AuthLoading());
+
+    try {
+      // 1. Registramos en el repositorio (Back + Firebase)
+      final user = await _authRepository.register(
+        name: name,
+        email: email,
+        password: password,
+        termsAccepted: termsAccepted,
+        legajo: legajo,
+      );
+
+      // 2. Emitimos el estado de autenticado con el nuevo usuario
+      emit(Authenticated(user));
+    } catch (e) {
+      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  /// Cierre de sesión persistente
   Future<void> logout() async {
     await _firebaseAuth.signOut();
     emit(Unauthenticated());
+  }
+
+  /// Mantenemos este por compatibilidad si se usa en otros lados, 
+  /// pero la lógica pro ahora va en registerUser
+  void register(User user) {
+    emit(Authenticated(user));
   }
 }

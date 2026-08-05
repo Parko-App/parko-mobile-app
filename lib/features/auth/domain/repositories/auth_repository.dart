@@ -17,8 +17,8 @@ abstract class AuthRepository {
   });
 
   /// Obtiene los datos del usuario desde el backend
-  Future<User> getUserProfile(String email);
+  Future<User> getUserProfile(String token, String firebaseId);
 
   /// Obtiene el saldo del usuario
-  Future<double> getBalance(String uuid);
+  Future<double> getBalance(String token, String firebaseId);
 }

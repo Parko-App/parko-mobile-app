@@ -44,13 +44,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<User> getUserProfile(String email) async {
-    return await remoteDataSource.getUserProfile(email);
+  Future<User> getUserProfile(String token, String firebaseId) async {
+    return await remoteDataSource.getUserProfile(token, firebaseId);
   }
 
   @override
-  Future<double> getBalance(String uuid) async {
-    return await remoteDataSource.getBalance(uuid);
+  Future<double> getBalance(String token, String firebaseId) async {
+    return await remoteDataSource.getBalance(token, firebaseId);
   }
 
   @override

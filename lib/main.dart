@@ -18,7 +18,7 @@ import 'features/vehicles/domain/repositories/vehicle_repository.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await FirebaseAuth.instance.signOut(); // forzar login si ya habia una sesion abierta
+  //await FirebaseAuth.instance.signOut(); // forzar login si ya habia una sesion abierta
   runApp(const ParkoApp());
 }
 

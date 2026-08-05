@@ -13,9 +13,9 @@ abstract class AuthRemoteDataSource {
     required bool termsAccepted,
   });
 
-  Future<UserModel> getUserProfile(String email);
+  Future<UserModel> getUserProfile(String token, String firebaseId);
 
-  Future<double> getBalance(String uuid);
+  Future<double> getBalance(String token, String firebaseId);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -24,13 +24,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<double> getBalance(String uuid) async {
-    final url = Uri.parse(ApiConfig.getBalance(uuid));
+  Future<double> getBalance(String token, String firebaseId) async {
+    final url = Uri.parse(ApiConfig.getBalance(token, firebaseId));
 
     try {
       final response = await client.get(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json',
+                  'Authorization': 'Bearer $token'},
+
       );
 
       if (response.statusCode == 200) {
@@ -45,13 +47,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> getUserProfile(String email) async {
-    final url = Uri.parse(ApiConfig.getUserProfile(email));
+  Future<UserModel> getUserProfile(String token, String firebaseId) async {
+    final url = Uri.parse(ApiConfig.getUserProfile(token, firebaseId));
 
     try {
       final response = await client.get(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json',
+                  'Authorization': 'Bearer $token'},
       );
 
       if (response.statusCode == 200) {
@@ -60,7 +63,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw Exception('Usuario no encontrado en el backend');
       }
     } catch (_) {
-      throw Exception('Error al conectar con el servidor para obtener el perfil');
+      throw Exception('El servidor no está disponible en este momento');
     }
   }
 

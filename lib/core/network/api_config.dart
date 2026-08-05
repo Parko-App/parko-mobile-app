@@ -7,10 +7,10 @@ class ApiConfig {
   static const String userEndpoint = '$baseUrl/api/user';
 
   /// Obtener perfil completo por email  ( ver con que dato lo puedo hacer)
-  static String getUserProfile(String uuid) => '$baseUrl/api/user/$uuid';
+  static String getUserProfile(String token, String firebaseId) => '$baseUrl/api/v1/user/$firebaseId';
   
   /// Obtener el saldo del usuario
-  static String getBalance(String uuid) => '$baseUrl/api/user/$uuid/balance';
+  static String getBalance(String token, String firebaseId) => '$baseUrl/api/v1/user/$firebaseId/balance';
   
   // Acá podés ir agregando más:
   // static const String saldoEndpoint = '$baseUrl/api/wallet/balance';

@@ -8,7 +8,12 @@ class VehicleRepositoryImpl implements VehicleRepository {
   VehicleRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Vehicle>> getUserVehicles(String uuid) async {
-    return await remoteDataSource.getUserVehicles(uuid);
+  Future<List<Vehicle>> getUserVehicles(String uuid, String token) async {
+    return await remoteDataSource.getUserVehicles(uuid, token);
+  }
+
+  @override
+  Future<Vehicle> addVehicle(String uuid, String token, String plate, String brand, String model) async {
+    return await remoteDataSource.addVehicle(uuid, token, plate, brand, model);
   }
 }

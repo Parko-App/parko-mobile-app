@@ -11,6 +11,9 @@ abstract class AuthState extends Equatable {
 /// No sabemos si hay alguien logueado (ej: al arrancar la app)
 class AuthInitial extends AuthState {}
 
+/// Estado de carga (procesando login o registro)
+class AuthLoading extends AuthState {}
+
 /// El usuario está logueado y tenemos sus datos de la entidad User
 class Authenticated extends AuthState {
   final User user;

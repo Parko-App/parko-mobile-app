@@ -64,6 +64,17 @@ class AppValidators {
 
   static String? password(String? value) {
     if (value == null || value.isEmpty) return 'Por favor, ingresá tu contraseña';
+    if (value.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
+    }
+
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Debe tener al menos una mayúscula';
+    }
+
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Debe tener al menos un número';
+    }
     return null;
   }
 
