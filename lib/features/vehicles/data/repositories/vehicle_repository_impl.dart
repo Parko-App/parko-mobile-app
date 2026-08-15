@@ -16,4 +16,9 @@ class VehicleRepositoryImpl implements VehicleRepository {
   Future<Vehicle> addVehicle(String uuid, String token, String plate, String brand, String model) async {
     return await remoteDataSource.addVehicle(uuid, token, plate, brand, model);
   }
+
+  @override
+  Future<void> deleteVehicle(String vehicleId, String token) async {
+    return await remoteDataSource.deleteVehicle(vehicleId, token);
+  }
 }

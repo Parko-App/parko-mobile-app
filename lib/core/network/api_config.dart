@@ -11,8 +11,6 @@ class ApiConfig {
   
   /// Obtener el saldo del usuario
   static String getBalance(String token, String firebaseId) => '$baseUrl/api/v1/user/$firebaseId/balance';
-  
-  // Acá podés ir agregando más:
-  // static const String saldoEndpoint = '$baseUrl/api/wallet/balance';
+
 
 }

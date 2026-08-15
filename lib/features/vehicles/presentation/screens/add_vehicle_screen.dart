@@ -11,7 +11,9 @@ import '../bloc/vehicles_cubit.dart';
 import '../bloc/vehicles_state.dart';
 
 class AddVehicleScreen extends StatefulWidget {
-  const AddVehicleScreen({super.key});
+  final String? initialPlate; // Patente opcional que puede venir de la pantalla anterior
+
+  const AddVehicleScreen({super.key, this.initialPlate});
 
   @override
   State<AddVehicleScreen> createState() => _AddVehicleScreenState();
@@ -19,9 +21,16 @@ class AddVehicleScreen extends StatefulWidget {
 
 class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _plateController = TextEditingController();
+  late final TextEditingController _plateController;
   final _brandController = TextEditingController();
   final _modelController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializamos el controlador con la patente que viene
+    _plateController = TextEditingController(text: widget.initialPlate);
+  }
 
   @override
   void dispose() {
@@ -33,7 +42,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Envolvemos la pantalla en su propio Cubit
     return BlocProvider(
       create: (context) => VehiclesCubit(
         vehicleRepository: context.read<VehicleRepository>(),
@@ -47,7 +55,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 backgroundColor: AppColors.primary,
               ),
             );
-            Navigator.pop(context, true); // Volvemos a la home avisando éxito
+            Navigator.pop(context, true);
           } else if (state is VehiclesError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -108,7 +116,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   
                   const SizedBox(height: 48),
                   
-                  // El botón ahora reacciona al estado del Cubit
                   BlocBuilder<VehiclesCubit, VehiclesState>(
                     builder: (context, state) {
                       final isLoading = state is VehiclesLoading;
@@ -116,18 +123,13 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       return ElevatedButton(
                         onPressed: isLoading ? null : () {
                           if (_formKey.currentState!.validate()) {
-                            // Sacamos el UUID del backend desde el AuthCubit global
                             final authState = context.read<AuthCubit>().state;
                             if (authState is Authenticated) {
                               context.read<VehiclesCubit>().addVehicle(
-                                uuid: authState.user.id, // ID del back
+                                uuid: authState.user.id,
                                 plate: _plateController.text.trim().toUpperCase(),
                                 brand: _brandController.text.trim(),
                                 model: _modelController.text.trim(),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Error: No se encontró sesión activa")),
                               );
                             }
                           }

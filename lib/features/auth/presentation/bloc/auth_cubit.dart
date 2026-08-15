@@ -9,10 +9,9 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
 
   AuthCubit({
-    required AuthRepository authRepository,
+    required this._authRepository,
     firebase.FirebaseAuth? firebaseAuth,
-  })  : _authRepository = authRepository,
-        _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
+  })  : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
         super(AuthInitial());
 
   /// Este método chequea si ya hay una sesión activa al abrir la app.

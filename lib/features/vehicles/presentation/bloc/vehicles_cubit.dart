@@ -8,14 +8,28 @@ class VehiclesCubit extends Cubit<VehiclesState> {
   final firebase.FirebaseAuth _firebaseAuth;
 
   VehiclesCubit({
-    required VehicleRepository vehicleRepository,
+    required this._vehicleRepository,
     firebase.FirebaseAuth? firebaseAuth,
-  })  : _vehicleRepository = vehicleRepository,
-        _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
+  })  : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
         super(VehiclesInitial());
 
+  /// Obtiene la lista de vehículos del usuario
+  Future<void> fetchVehicles(String uuid) async {
+    emit(VehiclesLoading());
+    try {
+      final token = await _firebaseAuth.currentUser?.getIdToken();
+      if (token == null) throw Exception("Sesión expirada");
+
+      final vehicles = await _vehicleRepository.getUserVehicles(uuid, token);
+      emit(VehiclesLoaded(vehicles));
+    } catch (e) {
+      emit(VehiclesError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  /// Registra un nuevo vehículo
   Future<void> addVehicle({
-    required String uuid, // <--- Ahora recibimos el UUID del back
+    required String uuid,
     required String plate,
     required String brand,
     required String model,
@@ -31,7 +45,7 @@ class VehiclesCubit extends Cubit<VehiclesState> {
       }
 
       await _vehicleRepository.addVehicle(
-        uuid, // <--- Usamos el UUID real
+        uuid,
         token,
         plate.toUpperCase(),
         brand,
@@ -44,6 +58,22 @@ class VehiclesCubit extends Cubit<VehiclesState> {
         emit(VehiclesError("Esa patente ya está registrada"));
         return;
       }
+      emit(VehiclesError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  /// Elimina un vehículo
+  Future<void> deleteVehicle(String vehicleId, String uuid) async {
+    emit(VehiclesLoading());
+    try {
+      final token = await _firebaseAuth.currentUser?.getIdToken();
+      if (token == null) throw Exception("Sesión expirada");
+
+      await _vehicleRepository.deleteVehicle(vehicleId, token);
+      
+      // Después de eliminar, refrescamos la lista
+      await fetchVehicles(uuid);
+    } catch (e) {
       emit(VehiclesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }

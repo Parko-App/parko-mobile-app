@@ -21,7 +21,7 @@ class PatentesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Función auxiliar para navegar y refrescar
-    Future<void> _onAddTap() async {
+    Future<void> onAddTap() async {
       final result = await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
@@ -54,7 +54,7 @@ class PatentesList extends StatelessWidget {
               style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
             ),
             TextButton(
-              onPressed: _onAddTap,
+              onPressed: onAddTap,
               child: const Text("+ Agregar mi primera patente"),
             ),
           ],
@@ -72,7 +72,7 @@ class PatentesList extends StatelessWidget {
           // Solo mostramos el botoncito de "+" si tiene menos de 3 vehículos
           if (vehicles.length < 3)
             GestureDetector(
-              onTap: _onAddTap,
+              onTap: onAddTap,
               child: Container(
                 width: 60,
                 height: 80,

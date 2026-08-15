@@ -18,19 +18,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
 
-  // La GlobalKey nos permite acceder al estado del Form desde fuera (ej. desde el botón)
   final _formKey = GlobalKey<FormState>();
 
-  // Controladores para capturar el texto ingresado
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Variable para manejar el estado de carga
+
   bool _isLoading = false;
 
   @override
   void dispose() {
-    // limpiar los controladores cuando el widget se destruye
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -133,7 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (!_formKey.currentState!.validate()) return;
                             setState(() => _isLoading = true);
 
-                            // LLAMADO UNIFICADO AL CUBIT
                             await context.read<AuthCubit>().login(
                               _emailController.text.trim(),
                               _passwordController.text,
