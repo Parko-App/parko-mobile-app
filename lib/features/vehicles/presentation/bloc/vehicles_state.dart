@@ -9,9 +9,14 @@ abstract class VehiclesState extends Equatable {
 
 class VehiclesInitial extends VehiclesState {}
 class VehiclesLoading extends VehiclesState {}
-class VehiclesSuccess extends VehiclesState {}
 
-/// Estado cuando se cargan los vehículos exitosamente
+class VehiclesSuccess extends VehiclesState {
+  final List<Vehicle> vehicles; // Llevamos la lista para que la UI no se quede vacía
+  const VehiclesSuccess(this.vehicles);
+  @override
+  List<Object?> get props => [vehicles];
+}
+
 class VehiclesLoaded extends VehiclesState {
   final List<Vehicle> vehicles;
   const VehiclesLoaded(this.vehicles);

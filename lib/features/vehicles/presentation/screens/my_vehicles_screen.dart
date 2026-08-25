@@ -4,41 +4,29 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../domain/repositories/vehicle_repository.dart';
 import '../bloc/vehicles_cubit.dart';
 import '../bloc/vehicles_state.dart';
 import 'add_vehicle_screen.dart';
 
-class MyVehiclesScreen extends StatelessWidget {
+class MyVehiclesScreen extends StatefulWidget {
   const MyVehiclesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final authState = context.read<AuthCubit>().state;
-        final cubit = VehiclesCubit(
-          vehicleRepository: context.read<VehicleRepository>(),
-        );
-        if (authState is Authenticated) {
-          cubit.fetchVehicles(authState.user.id);
-        }
-        return cubit;
-      },
-      child: const _MyVehiclesView(),
-    );
-  }
+  State<MyVehiclesScreen> createState() => _MyVehiclesScreenState();
 }
 
-class _MyVehiclesView extends StatefulWidget {
-  const _MyVehiclesView();
+class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
+  final _plateController = TextEditingController();
 
   @override
-  State<_MyVehiclesView> createState() => _MyVehiclesViewState();
-}
-
-class _MyVehiclesViewState extends State<_MyVehiclesView> {
-  final _plateController = TextEditingController();
+  void initState() {
+    super.initState();
+    // Al entrar, pedimos los datos al Cubit Global (definido en main.dart)
+    final authState = context.read<AuthCubit>().state;
+    if (authState is Authenticated) {
+      context.read<VehiclesCubit>().fetchVehicles(authState.user.id);
+    }
+  }
 
   @override
   void dispose() {
@@ -48,51 +36,61 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Navigator.of(context).canPop() 
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20),
-              onPressed: () => Navigator.pop(context),
-            )
-          : null,
-        title: Text(
-          "Mis patentes",
-          style: GoogleFonts.nunito(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w800,
-            fontSize: 20,
+    // Escuchamos al VehiclesCubit GLOBAL (el que vive en main.dart)
+    return BlocConsumer<VehiclesCubit, VehiclesState>(
+      listener: (context, state) {
+        if (state is VehiclesError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is VehiclesLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Definimos la lista de vehículos según el estado (Loaded o Success)
+        List vehicles = [];
+        if (state is VehiclesLoaded) {
+          vehicles = state.vehicles;
+        } else if (state is VehiclesSuccess) {
+          vehicles = state.vehicles;
+        }
+
+        final int count = vehicles.length;
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: Navigator.of(context).canPop() 
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                )
+              : null,
+            title: Text(
+              "Mis patentes",
+              style: GoogleFonts.nunito(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+              ),
+            ),
+            centerTitle: true,
           ),
-        ),
-        centerTitle: true,
-      ),
-      body: BlocConsumer<VehiclesCubit, VehiclesState>(
-        listener: (context, state) {
-          if (state is VehiclesError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is VehiclesLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final vehicles = state is VehiclesLoaded ? state.vehicles : [];
-          final int count = vehicles.length;
-
-          return SingleChildScrollView(
+          body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
                 
-                // Cuantas patentes hay vinculadas
+                // Indicador de patentes vinculadas
                 Row(
                   children: [
                     Row(
@@ -159,7 +157,7 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
                       hintStyle: GoogleFonts.nunito(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.primary.withValues(alpha: 0.2),
+                        color: AppColors.primary.withOpacity(0.2),
                       ),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -174,7 +172,7 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: AppColors.textSecondary.withValues(alpha: 0.6),
+                      color: AppColors.textSecondary.withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -186,7 +184,6 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
                   onPressed: count >= 3 
                     ? null 
                     : () async {
-                        // Pasamos la patente que escribió a la siguiente pantalla
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -198,10 +195,8 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
                         
                         if (result == true && mounted) {
                           _plateController.clear();
-                          final authState = context.read<AuthCubit>().state;
-                          if (authState is Authenticated) {
-                            context.read<VehiclesCubit>().fetchVehicles(authState.user.id);
-                          }
+                          // No hace falta llamar a fetchVehicles acá, 
+                          // porque el propio Cubit se actualiza al agregar con éxito.
                         }
                       },
                   child: const Text("Vincular patente"),
@@ -209,9 +204,9 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
                 const SizedBox(height: 40),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -224,12 +219,12 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
+            color: AppColors.primary.withOpacity(0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.05)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -260,7 +255,7 @@ class _MyVehiclesViewState extends State<_MyVehiclesView> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
+                color: AppColors.error.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

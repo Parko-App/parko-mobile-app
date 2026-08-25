@@ -7,6 +7,8 @@ import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/domain/repositories/vehicle_repository.dart';
+import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
+import '../../../vehicles/presentation/bloc/vehicles_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../bloc/home_cubit.dart';
 import '../bloc/home_state.dart';
@@ -73,13 +75,15 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               final String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : "U";
               return RefreshIndicator(
-                // Para actualizar la pantalla
-                onRefresh: () {
+                // Al deslizar para actualizar, refrescamos ambos: Home (saldo) y Vehículos
+                onRefresh: () async {
                   final authState = context.read<AuthCubit>().state;
                   if (authState is Authenticated) {
-                    return context.read<HomeCubit>().fetchHomeData(authState.user.id);
+                    await Future.wait([
+                      context.read<HomeCubit>().fetchHomeData(authState.user.id),
+                      context.read<VehiclesCubit>().fetchVehicles(authState.user.id),
+                    ]);
                   }
-                  return Future.value();
                 },
                 color: AppColors.primary,
                 child: SingleChildScrollView(
@@ -133,8 +137,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       _buildPatentesHeader(context),
                       const SizedBox(height: 12),
-                      //_buildPatentesList(state),
-                      state is HomeLoaded ? PatentesList(vehicles: state.vehicles) : const SizedBox(),
+                      
+                      // ¡CLAVE! La lista de patentes ahora escucha al VehiclesCubit GLOBAL.
+                      // Esto asegura sincronización total entre pantallas.
+                      BlocBuilder<VehiclesCubit, VehiclesState>(
+                        builder: (context, vehiclesState) {
+                          if (vehiclesState is VehiclesLoaded) {
+                            return PatentesList(vehicles: vehiclesState.vehicles);
+                          }
+                          // Si terminó de agregar con éxito, también mostramos la lista que trae el estado
+                          if (vehiclesState is VehiclesSuccess) {
+                            return PatentesList(vehicles: vehiclesState.vehicles);
+                          }
+
+                          return state is HomeLoaded 
+                              ? PatentesList(vehicles: state.vehicles) 
+                              : const SizedBox();
+                        },
+                      ),
 
                       const SizedBox(height: 32),
 
@@ -302,18 +322,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         TextButton(
           onPressed: () async {
-            final homeCubit = context.read<HomeCubit>();
-            final authCubit = context.read<AuthCubit>();
-            
+            // Navegamos a la gestión de patentes
             await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const MyVehiclesScreen()),
             );
             
+            // Al volver, si es necesario, podemos refrescar (aunque ya estará sincronizado por el Cubit global)
             if (mounted) {
-              final authState = authCubit.state;
+              final authState = context.read<AuthCubit>().state;
               if (authState is Authenticated) {
-                homeCubit.fetchHomeData(authState.user.id);
+                context.read<HomeCubit>().fetchHomeData(authState.user.id);
               }
             }
           },

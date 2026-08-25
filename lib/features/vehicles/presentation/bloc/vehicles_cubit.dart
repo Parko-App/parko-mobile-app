@@ -52,7 +52,9 @@ class VehiclesCubit extends Cubit<VehiclesState> {
         model,
       );
 
-      emit(VehiclesSuccess());
+      final vehicles = await _vehicleRepository.getUserVehicles(uuid, token);
+
+      emit(VehiclesSuccess(vehicles));
     } catch (e) {
       if(e.toString().contains("El recurso ya existe")){
         emit(VehiclesError("Esa patente ya está registrada"));
