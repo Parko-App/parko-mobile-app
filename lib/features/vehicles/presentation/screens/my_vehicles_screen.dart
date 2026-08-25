@@ -21,7 +21,10 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
   @override
   void initState() {
     super.initState();
-    // Al entrar, pedimos los datos al Cubit Global (definido en main.dart)
+    _refreshVehicles();
+  }
+
+  void _refreshVehicles() {
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
       context.read<VehiclesCubit>().fetchVehicles(authState.user.id);
@@ -36,7 +39,7 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchamos al VehiclesCubit GLOBAL (el que vive en main.dart)
+    // Escuchamos al VehiclesCubit GLOBAL
     return BlocConsumer<VehiclesCubit, VehiclesState>(
       listener: (context, state) {
         if (state is VehiclesError) {
@@ -52,14 +55,8 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
           );
         }
 
-        // Definimos la lista de vehículos según el estado (Loaded o Success)
-        List vehicles = [];
-        if (state is VehiclesLoaded) {
-          vehicles = state.vehicles;
-        } else if (state is VehiclesSuccess) {
-          vehicles = state.vehicles;
-        }
-
+        final vehicles = state is VehiclesLoaded ? state.vehicles : 
+                        (state is VehiclesSuccess ? state.vehicles : []);
         final int count = vehicles.length;
 
         return Scaffold(
@@ -83,126 +80,129 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
             ),
             centerTitle: true,
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                
-                // Indicador de patentes vinculadas
-                Row(
-                  children: [
-                    Row(
-                      children: List.generate(3, (index) {
-                        return Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(right: 6),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: index < count ? AppColors.primary : AppColors.circulos,
-                          ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      "$count de 3 patentes vinculadas",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
+          body: RefreshIndicator(
+            onRefresh: () async => _refreshVehicles(),
+            color: AppColors.primary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  
+                  // Indicador de patentes vinculadas
+                  Row(
+                    children: [
+                      Row(
+                        children: List.generate(3, (index) {
+                          return Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: index < count ? AppColors.primary : AppColors.circulos,
+                            ),
+                          );
+                        }),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // Lista de patentes
-                ...vehicles.map((v) => _buildVehicleItem(context, v)),
-
-                const SizedBox(height: 32),
-
-                Text(
-                  "Vincular nueva patente",
-                  style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                      const SizedBox(width: 12),
+                      Text(
+                        "$count de 3 patentes vinculadas",
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.inputFieldBackground,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: TextField(
-                    controller: _plateController,
-                    textAlign: TextAlign.center,
-                    textCapitalization: TextCapitalization.characters,
+  
+                  const SizedBox(height: 32),
+  
+                  // Lista de patentes
+                  ...vehicles.map((v) => _buildVehicleItem(context, v)),
+  
+                  const SizedBox(height: 32),
+  
+                  Text(
+                    "Vincular nueva patente",
                     style: GoogleFonts.nunito(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.primary,
-                      letterSpacing: 2,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
                     ),
-                    decoration: InputDecoration(
-                      hintText: "Ej: AA111AA",
-                      hintStyle: GoogleFonts.nunito(
+                  ),
+                  const SizedBox(height: 16),
+  
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputFieldBackground,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: TextField(
+                      controller: _plateController,
+                      textAlign: TextAlign.center,
+                      textCapitalization: TextCapitalization.characters,
+                      style: GoogleFonts.nunito(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.primary.withOpacity(0.2),
+                        color: AppColors.primary,
+                        letterSpacing: 2,
                       ),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
+                      decoration: InputDecoration(
+                        hintText: "Ej: AA111AA",
+                        hintStyle: GoogleFonts.nunito(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    "Aceptamos formato viejo (AAA111) y Mercosur (AA111AA)",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.textSecondary.withOpacity(0.6),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      "Aceptamos formato viejo (AAA111) y Mercosur (AA111AA)",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary.withValues(alpha: 0.6),
+                      ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Botón Vincular
-                ElevatedButton(
-                  onPressed: count >= 3 
-                    ? null 
-                    : () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddVehicleScreen(
-                              initialPlate: _plateController.text.trim(),
+  
+                  const SizedBox(height: 40),
+  
+                  // Botón Vincular
+                  ElevatedButton(
+                    onPressed: count >= 3 
+                      ? null 
+                      : () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddVehicleScreen(
+                                initialPlate: _plateController.text.trim(),
+                              ),
                             ),
-                          ),
-                        );
-                        
-                        if (result == true && mounted) {
-                          _plateController.clear();
-                          // No hace falta llamar a fetchVehicles acá, 
-                          // porque el propio Cubit se actualiza al agregar con éxito.
-                        }
-                      },
-                  child: const Text("Vincular patente"),
-                ),
-                const SizedBox(height: 40),
-              ],
+                          );
+                          
+                          if (result == true && mounted) {
+                            _plateController.clear();
+                          }
+                        },
+                    child: const Text("Vincular patente"),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         );
@@ -219,12 +219,12 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
+            color: AppColors.primary.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: AppColors.primary.withOpacity(0.05)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -255,7 +255,7 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -286,6 +286,7 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
               Navigator.pop(diagContext);
               final authState = context.read<AuthCubit>().state;
               if (authState is Authenticated) {
+                // Al borrar, el Cubit Global se actualiza y todas las pantallas lo ven.
                 context.read<VehiclesCubit>().deleteVehicle(vehicle.id, authState.user.id);
               }
             },

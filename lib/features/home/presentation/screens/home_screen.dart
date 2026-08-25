@@ -137,15 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       _buildPatentesHeader(context),
                       const SizedBox(height: 12),
-                      
-                      // ¡CLAVE! La lista de patentes ahora escucha al VehiclesCubit GLOBAL.
-                      // Esto asegura sincronización total entre pantallas.
+
                       BlocBuilder<VehiclesCubit, VehiclesState>(
                         builder: (context, vehiclesState) {
                           if (vehiclesState is VehiclesLoaded) {
                             return PatentesList(vehicles: vehiclesState.vehicles);
                           }
-                          // Si terminó de agregar con éxito, también mostramos la lista que trae el estado
                           if (vehiclesState is VehiclesSuccess) {
                             return PatentesList(vehicles: vehiclesState.vehicles);
                           }
@@ -322,13 +319,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         TextButton(
           onPressed: () async {
-            // Navegamos a la gestión de patentes
             await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const MyVehiclesScreen()),
             );
-            
-            // Al volver, si es necesario, podemos refrescar (aunque ya estará sincronizado por el Cubit global)
+
             if (mounted) {
               final authState = context.read<AuthCubit>().state;
               if (authState is Authenticated) {
