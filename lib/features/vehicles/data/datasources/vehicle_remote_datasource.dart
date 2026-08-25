@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_config.dart';
 import '../models/vehicle_model.dart';
@@ -7,6 +6,7 @@ import '../models/vehicle_model.dart';
 abstract class VehicleRemoteDataSource {
   Future<List<VehicleModel>> getUserVehicles(String uuid, String token);
   Future<VehicleModel> addVehicle(String uuid, String token, String plate, String brand, String model);
+  Future<void> deleteVehicle(String vehicleId, String token);
 }
 
 class VehicleRemoteDataSourceImpl implements VehicleRemoteDataSource {
@@ -67,6 +67,30 @@ class VehicleRemoteDataSourceImpl implements VehicleRemoteDataSource {
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Error de conexión al registrar vehículo');
+    }
+  }
+
+  @override
+  Future<void> deleteVehicle(String vehicleId, String token) async {
+    // Endpoint para eliminar un vehículo por su ID
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/v1/vehicle/$vehicleId');
+
+    try {
+      final response = await client.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        final errorMessage = _extractErrorMessage(response);
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Error de conexión al eliminar vehículo');
     }
   }
 

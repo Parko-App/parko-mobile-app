@@ -12,12 +12,10 @@ class HomeCubit extends Cubit<HomeState> {
   final firebase.FirebaseAuth _firebaseAuth;
 
   HomeCubit({
-    required AuthRepository authRepository,
-    required VehicleRepository vehicleRepository,
+    required this._authRepository,
+    required this._vehicleRepository,
     firebase.FirebaseAuth? firebaseAuth
-  }) : _authRepository = authRepository,
-       _vehicleRepository = vehicleRepository,
-        _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
+  }) : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
        super(HomeInitial());
 
   Future<void> fetchHomeData(String userId) async {
@@ -37,7 +35,7 @@ class HomeCubit extends Cubit<HomeState> {
 
         final user = results[0] as User;
         // El nombre lo sacamos del perfil o usamos el ID de backup
-        final String name = (user is dynamic && user.name != null)
+        final String name = (user.name != null)
             ? user.name
             : "Usuario";
 

@@ -6,11 +6,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
-import '../../../vehicles/domain/entities/vehicle.dart';
 import '../../../vehicles/domain/repositories/vehicle_repository.dart';
-import '../../../vehicles/presentation/widgets/vehicle_card.dart';
-import '../../../vehicles/presentation/screens/add_vehicle_screen.dart';
+import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../bloc/home_cubit.dart';
 import '../bloc/home_state.dart';
 
@@ -22,39 +19,32 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      // Creamos el Cubit y disparamos la carga inicial al nacer el widget
       // Sacamos el nombre y el ID del AuthCubit global para dárselo al HomeCubit
       create: (context) {
         String userId = "";
-        String? token = "";
         final authState = context.read<AuthCubit>().state;
         if (authState is Authenticated) {
           userId = authState.user.id;
         }
         return HomeCubit(
-          authRepository: context.read<AuthRepository>(), vehicleRepository: context.read<VehicleRepository>(),
+          authRepository: context.read<AuthRepository>(), 
+          vehicleRepository: context.read<VehicleRepository>(),
         )..fetchHomeData(userId);
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
-          // El BlocBuilder escucha al Cubit y redibuja según el estado
           child: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, state) {
 
-              // 1. ESTADO DE CARGA: Mostramos un circulito mientras pedimos los datos
               if (state is HomeLoading) {
                 return const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),
                 );
               }
-
-              // 2. ESTADO DE ERROR: Si algo falló, mostramos un mensaje y botón
               if (state is HomeError) {
                 return Center(
                   child: Column(
@@ -77,17 +67,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               }
-
-              // Obtenemos el nombre y la inicial desde el estado del HomeCubit
               String userName = "Usuario";
               if (state is HomeLoaded) {
                 userName = state.userName;
               }
               final String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : "U";
-
-              // 3. ESTADO DE ÉXITO (HomeLoaded): Mostramos la UI dinámica
               return RefreshIndicator(
-                // Pull-to-refresh: al deslizar hacia abajo, vuelve a pedir todo
+                // Para actualizar la pantalla
                 onRefresh: () {
                   final authState = context.read<AuthCubit>().state;
                   if (authState is Authenticated) {
@@ -97,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 color: AppColors.primary,
                 child: SingleChildScrollView(
-                  // physics necesario para que el RefreshIndicator ande siempre
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
@@ -105,7 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const SizedBox(height: 20),
 
-                      // Header Dinámico, por ahora no funciona ni la campanita ni la inicial
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -143,20 +127,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Tarjeta de Saldo Dinámica
                       _buildSaldoCard(state),
 
                       const SizedBox(height: 32),
 
-                      // Sección: Tus patentes Dinámica
-                      _buildPatentesHeader(),
+                      _buildPatentesHeader(context),
                       const SizedBox(height: 12),
                       //_buildPatentesList(state),
                       state is HomeLoaded ? PatentesList(vehicles: state.vehicles) : const SizedBox(),
 
                       const SizedBox(height: 32),
 
-                      // Sección: Actividad reciente Dinámica
                       Text(
                         "Actividad reciente",
                         style: GoogleFonts.nunito(
@@ -176,12 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-        bottomNavigationBar: _buildBottomNav(),
       ),
     );
   }
 
-  // --- WIDGETS AUXILIARES PARA LIMPIAR EL BUILD ---
+  // Builders de los widgets (los quiero sacar a archivos diferentes despué)
 
   Widget _buildNotificationBell() {
     return Container(
@@ -235,7 +215,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSaldoCard(HomeState state) {
-    // Si no cargó todavía, mostramos 0, si cargó mostramos el saldo real
     String balanceStr = "0";
     if (state is HomeLoaded) {
       balanceStr = state.balance.toStringAsFixed(0).replaceAllMapped(
@@ -309,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPatentesHeader() {
+  Widget _buildPatentesHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -322,10 +301,25 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         TextButton(
-          onPressed: () {},
-          child: Text(
+          onPressed: () async {
+            final homeCubit = context.read<HomeCubit>();
+            final authCubit = context.read<AuthCubit>();
+            
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MyVehiclesScreen()),
+            );
+            
+            if (mounted) {
+              final authState = authCubit.state;
+              if (authState is Authenticated) {
+                homeCubit.fetchHomeData(authState.user.id);
+              }
+            }
+          },
+          child: const Text(
             "Ver todas",
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: AppColors.primary,
               fontWeight: FontWeight.w600,
             ),
@@ -366,65 +360,5 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     return const SizedBox();
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() => _selectedIndex = index);
-          // Esto es hasta hacer el botón para cerrar sesión correctamente
-          if (index == 3) _showLogoutDialog();
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary.withValues(alpha: 0.5),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: 'Historial'),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_car_filled_rounded), label: 'Patentes'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Perfil'),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Estás seguro que querés salir?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          TextButton(
-            onPressed: () async {
-              // 1. Cerramos la sesión en el Cubit (esto ya limpia Firebase)
-              await context.read<AuthCubit>().logout();
-              
-              if (mounted) {
-                // 2. Cerramos el diálogo y cualquier pantalla que esté por encima.
-                // Al volver a la "raíz", el main.dart verá que no hay sesión
-                // y mostrará el Login solo.
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              }
-            },
-            child: const Text('Salir', style: TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
-    );
   }
 }

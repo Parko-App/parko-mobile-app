@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,10 +9,10 @@ import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_cubit.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/home/presentation/screens/home_screen.dart';
 import 'features/vehicles/data/datasources/vehicle_remote_datasource.dart';
 import 'features/vehicles/data/repositories/vehicle_repository_impl.dart';
 import 'features/vehicles/domain/repositories/vehicle_repository.dart';
+import 'features/home/presentation/screens/main_navigation_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +28,9 @@ class ParkoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final httpClient = http.Client();
     
-    // Instanciamos los repositorios
+
+
+// Definimos los repositorios
     final authRepository = AuthRepositoryImpl(
       remoteDataSource: AuthRemoteDataSourceImpl(client: httpClient),
     );
@@ -51,7 +52,7 @@ class ParkoApp extends StatelessWidget {
           home: BlocBuilder<AuthCubit, AuthState>(
             builder: (context, state) {
               if (state is Authenticated) {
-                return const HomeScreen();
+                return const MainNavigationScreen();
               }
               return const LoginScreen();
             },
