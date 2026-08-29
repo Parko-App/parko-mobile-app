@@ -5,6 +5,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
+import 'change_password_screen.dart';
+import 'payment_methods_screen.dart';
+import 'support_screen.dart';
+import 'terms_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -15,9 +19,12 @@ class ProfileScreen extends StatelessWidget {
       builder: (context, state) {
         String userName = "Usuario";
         String userEmail = "";
+        bool notificationsEnabled = true;
+
         if (state is Authenticated) {
           userName = state.user.name;
           userEmail = state.user.email;
+          notificationsEnabled = state.user.notificationsEnabled;
         }
         final String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : "U";
 
@@ -35,6 +42,13 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             centerTitle: true,
+
+            leading: Navigator.of(context).canPop() 
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                )
+              : null,
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -69,20 +83,23 @@ class ProfileScreen extends StatelessWidget {
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  )
-                                ],
+                            child: GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    )
+                                  ],
+                                ),
+                                child: const Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.primary),
                               ),
-                              child: const Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.primary),
                             ),
                           ),
                         ],
@@ -123,34 +140,53 @@ class ProfileScreen extends StatelessWidget {
                 // Sección CUENTA
                 _buildSectionHeader("CUENTA"),
                 _buildMenuContainer([
-                  _buildMenuItem(Icons.person_outline, "Editar datos personales", onTap: () {}),
-                  _buildMenuItem(Icons.lock_outline, "Cambiar contraseña", onTap: () {}),
+                  _buildMenuItem(Icons.lock_outline, "Cambiar contraseña", onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                    );
+                  }),
                   _buildMenuItem(Icons.directions_car_outlined, "Mis patentes", onTap: () {
-                    // Navegamos a la pantalla de patentes
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const MyVehiclesScreen()),
                     );
                   }),
-                  _buildMenuItem(Icons.payment_outlined, "Métodos de pago", onTap: () {}),
+                  _buildMenuItem(Icons.payment_outlined, "Métodos de pago", onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
+                    );
+                  }),
                 ]),
 
                 const SizedBox(height: 32),
 
-                // Sección PREFERENCIAS
                 _buildSectionHeader("PREFERENCIAS"),
                 _buildMenuContainer([
                   _buildMenuItem(
                     Icons.notifications_none_outlined, 
                     "Notificaciones", 
                     trailing: Switch(
-                      value: true, 
-                      onChanged: (v) {},
+                      value: notificationsEnabled, 
+                      onChanged: (value) {
+                        context.read<AuthCubit>().toggleNotifications(value);
+                      },
                       activeColor: AppColors.primary,
                     ),
                   ),
-                  _buildMenuItem(Icons.help_outline, "Ayuda y soporte", onTap: () {}),
-                  _buildMenuItem(Icons.description_outlined, "Términos y condiciones", onTap: () {}),
+                  _buildMenuItem(Icons.help_outline, "Ayuda y soporte", onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SupportScreen()),
+                    );
+                  }),
+                  _buildMenuItem(Icons.description_outlined, "Términos y condiciones", onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TermsScreen()),
+                    );
+                  }),
                 ]),
 
                 const SizedBox(height: 32),

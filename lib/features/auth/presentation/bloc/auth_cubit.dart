@@ -35,23 +35,18 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// PROCESO DE LOGIN UNIFICADO
   Future<void> login(String email, String password) async {
-    // Emitimos carga para resetear cualquier error previo y disparar el listener
     emit(AuthLoading());
     
     try {
-      // 1. Logueamos en Firebase a través del repositorio
       final userFromFirebase = await _authRepository.login(email: email, password: password);
-      
-      // 2. Buscamos el token fresco
+
       final token = await _firebaseAuth.currentUser?.getIdToken();
-      
-      // 3. Traemos el perfil del backend
+
       final userFull = await _authRepository.getUserProfile(token!, userFromFirebase.id);
       
       // 4. Si todo salió bien, emitimos el éxito
       emit(Authenticated(userFull));
     } catch (e) {
-      // Limpiamos el mensaje de error del backend
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
       logout();
     }
@@ -68,7 +63,6 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
-      // 1. Registramos en el repositorio (Back + Firebase)
       final user = await _authRepository.register(
         name: name,
         email: email,
@@ -77,7 +71,6 @@ class AuthCubit extends Cubit<AuthState> {
         legajo: legajo,
       );
 
-      // 2. Emitimos el estado de autenticado con el nuevo usuario
       emit(Authenticated(user));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
@@ -89,10 +82,24 @@ class AuthCubit extends Cubit<AuthState> {
     await _firebaseAuth.signOut();
     emit(Unauthenticated());
   }
-
-  /// Mantenemos este por compatibilidad si se usa en otros lados, 
-  /// pero la lógica pro ahora va en registerUser
+/*
   void register(User user) {
     emit(Authenticated(user));
+  }
+*/
+
+  void toggleNotifications(bool enabled) {
+    final currentState = state;
+    if (currentState is Authenticated) {
+      final updatedUser = User(
+        id: currentState.user.id,
+        name: currentState.user.name,
+        email: currentState.user.email,
+        legajo: currentState.user.legajo,
+        balance: currentState.user.balance,
+        notificationsEnabled: enabled,
+      );
+      emit(Authenticated(updatedUser));
+    }
   }
 }

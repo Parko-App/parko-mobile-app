@@ -36,7 +36,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicializamos el controlador con la patente que viene
     _plateController = TextEditingController(text: widget.initialPlate);
   }
 
@@ -48,7 +47,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Envolvemos la pantalla en el CarInfoCubit para cargar marcas/modelos
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -104,23 +102,20 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   
                   CustomTextField(
                     label: 'Patente / Dominio',
-                    hintText: 'Ej: AB123CD',
+                    hintText: 'AB123CD | AAA123',
                     controller: _plateController,
                     validator: (value) => AppValidators.required(value, 'la patente'),
                   ),
                   const SizedBox(height: 24),
-                  
-                  // Selector de Marca
+
                   _buildBrandSelector(),
                   
                   const SizedBox(height: 24),
-                  
-                  // Selector de Modelo
+
                   _buildModelSelector(),
                   
                   const SizedBox(height: 48),
-                  
-                  // El botón ahora reacciona al estado del Cubit GLOBAL
+
                   BlocBuilder<VehiclesCubit, VehiclesState>(
                     builder: (context, state) {
                       final isLoading = state is VehiclesLoading;

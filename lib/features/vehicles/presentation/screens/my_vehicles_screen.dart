@@ -8,6 +8,8 @@ import '../bloc/vehicles_cubit.dart';
 import '../bloc/vehicles_state.dart';
 import 'add_vehicle_screen.dart';
 
+import '../widgets/vehicle_detail_dialog.dart';
+
 class MyVehiclesScreen extends StatefulWidget {
   const MyVehiclesScreen({super.key});
 
@@ -154,9 +156,9 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
                         letterSpacing: 2,
                       ),
                       decoration: InputDecoration(
-                        hintText: "Ej: AA111AA",
+                        hintText: "AA111AA",
                         hintStyle: GoogleFonts.nunito(
-                          fontSize: 32,
+                          fontSize: 25,
                           fontWeight: FontWeight.w900,
                           color: AppColors.primary.withValues(alpha: 0.2),
                         ),
@@ -211,61 +213,64 @@ class _MyVehiclesScreenState extends State<MyVehiclesScreen> {
   }
 
   Widget _buildVehicleItem(BuildContext context, dynamic vehicle) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                vehicle.plate.toUpperCase(),
-                style: GoogleFonts.nunito(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
+    return GestureDetector(
+      onTap: () => showVehicleDetail(context, vehicle),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  vehicle.plate.toUpperCase(),
+                  style: GoogleFonts.nunito(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "${vehicle.brand} ${vehicle.model}",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
+                const SizedBox(height: 4),
+                Text(
+                  "${vehicle.brand} ${vehicle.model}",
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          GestureDetector(
-            onTap: () => _confirmDelete(context, vehicle),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.delete_outline_rounded,
-                color: AppColors.error,
-                size: 20,
+              ],
+            ),
+            GestureDetector(
+              onTap: () => _confirmDelete(context, vehicle),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.error,
+                  size: 20,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

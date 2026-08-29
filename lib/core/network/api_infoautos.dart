@@ -5,9 +5,9 @@ class ApiInfoautos {
     defaultValue: 'https://argautos.com/api/v1',
   );
 
-  static const String brandsEndpoint = '$baseUrl/infoauto/brands?per_page=100';
+  static const String brandsEndpoint = '$baseUrl/brands?per_page=100';
 
-  static String getBrandModels(int brandId) => '$baseUrl/infoauto/brands/$brandId/models?per_page=100';
+  static String getBrandModels(int brandId) => '$baseUrl/brands/$brandId/models?per_page=100';
 
 
 }
