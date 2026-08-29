@@ -20,15 +20,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final _formKey = GlobalKey<FormState>();
 
-  final _emailController = TextEditingController();
+  final _legajoController = TextEditingController();
   final _passwordController = TextEditingController();
-
+  String? _selectedDomain;
+  bool _showDomainError = false;
 
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _legajoController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -37,13 +38,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        // Si el Cubit emite un error, lo mostramos acá
+
         if (state is AuthError) {
           setState(() => _isLoading = false);
           if(state.message.contains('incorrect, malformed or has expired') ||
               state.message.contains("invalid-credential'")){
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text('El email o la contraseña con incorrectos'),
                 backgroundColor: AppColors.error,
                 behavior: SnackBarBehavior.floating,
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
           if(state.message.contains('badly formatted')){
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text('El formato del correo no es correcto'),
                 backgroundColor: AppColors.error,
                 behavior: SnackBarBehavior.floating,
@@ -101,13 +102,117 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text("Encontrá y pagá tu estacionamiento", style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 15)),
                       const SizedBox(height: 48),
                       
+                      // legajo numerico
                       CustomTextField(
-                        label: 'Email o legajo',
-                        hintText: 'legajo@dominio.frc.utn.edu.ar',
-                        controller: _emailController,
-                        validator: (value) => AppValidators.required(value, 'email o legajo'),
+                        label: 'Legajo',
+                        hintText: '123456',
+                        controller: _legajoController,
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          final requiredErr = AppValidators.required(value, 'legajo');
+                          if (requiredErr != null) return requiredErr;
+                          return AppValidators.legajo(value);
+                        },
                       ),
                       const SizedBox(height: 24),
+                      
+                      // dropdown dominios
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4, bottom: 8),
+                            child: Text(
+                              "Carrera / Dominio",
+                              style: GoogleFonts.nunito(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                          MenuAnchor(
+                            style: MenuStyle(
+                              backgroundColor: WidgetStateProperty.all(Colors.white),
+                              elevation: WidgetStateProperty.all(12),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                              fixedSize: const WidgetStatePropertyAll(Size(300, 300)),
+                            ),
+                            menuChildren: AppValidators.institutionalDomains.map((String domain) {
+                              return MenuItemButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedDomain = domain;
+                                  });
+                                },
+                                child: Container(
+                                  width: 250,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    domain.toUpperCase(),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            builder: (context, controller, child) {
+                              return InkWell(
+                                onTap: () {
+                                  if (controller.isOpen) {
+                                    controller.close();
+                                  } else {
+                                    controller.open();
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.inputFieldBackground,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: controller.isOpen ? AppColors.primary : Colors.transparent,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _selectedDomain == null 
+                                            ? 'Seleccioná tu carrera' 
+                                            : _selectedDomain!.toUpperCase(),
+                                        style: GoogleFonts.nunito(
+                                          fontWeight: _selectedDomain == null ? FontWeight.w500 : FontWeight.w700,
+                                          fontSize: 15,
+                                          color: _selectedDomain == null ? AppColors.hintText : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          // Mensaje de error manual para el dominio
+                          if (_showDomainError && _selectedDomain == null)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 16, top: 8),
+                              child: Text(
+                                "Por favor, seleccioná un dominio",
+                                style: TextStyle(color: AppColors.error, fontSize: 12),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      
                       CustomTextField(
                         label: 'Contraseña',
                         hintText: '••••••••',
@@ -127,11 +232,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _isLoading
                           ? null
                           : () async {
-                            if (!_formKey.currentState!.validate()) return;
+                            setState(() => _showDomainError = true);
+
+                            final isFormValid = _formKey.currentState!.validate();
+
+                            final isDomainValid = _selectedDomain != null;
+
+                            if (!isFormValid || !isDomainValid) {
+                              return;
+                            }
+
                             setState(() => _isLoading = true);
 
+                            // Armamos el email completo
+                            final fullEmail = '${_legajoController.text.trim()}@$_selectedDomain.frc.utn.edu.ar';
+
                             await context.read<AuthCubit>().login(
-                              _emailController.text.trim(),
+                              fullEmail,
                               _passwordController.text,
                             );
 

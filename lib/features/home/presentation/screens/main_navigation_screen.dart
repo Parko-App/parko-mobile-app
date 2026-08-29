@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 import 'home_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -23,30 +25,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const HomeScreen(),
     const Center(child: Text("Historial (Próximamente)")),
     const MyVehiclesScreen(),
-    const Center(child: Text("Perfil (Próximamente)")),
+    const ProfileScreen(),
   ];
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Estás seguro que querés salir?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          TextButton(
-            onPressed: () async {
-              await context.read<AuthCubit>().logout();
-              if (mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              }
-            },
-            child: const Text('Salir', style: TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +35,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
-        // 1. Si no estamos en Inicio, volvemos a la primera pestaña
         if (_selectedIndex != 0) {
           setState(() {
             _selectedIndex = 0;
@@ -63,7 +42,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           return;
         }
 
-        // 2. Si ya estamos en Inicio, manejamos el "Doble atrás para salir"
         final now = DateTime.now();
         if (_lastBackPressTime == null || 
             now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
@@ -102,11 +80,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (index) {
-              if (index == 3) {
-                _showLogoutDialog();
-              } else {
-                setState(() => _selectedIndex = index);
-              }
+              setState(() => _selectedIndex = index);
             },
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,

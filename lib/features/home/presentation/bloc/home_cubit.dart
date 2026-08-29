@@ -25,16 +25,15 @@ class HomeCubit extends Cubit<HomeState> {
       try {
         String? token = await firebaseUser.getIdToken();
         String firebaseId = firebaseUser.uid;
-        // Mandamos a pedir PERFIL, SALDO y VEHÍCULOS al mismo tiempo
+        
         final results = await Future.wait([
           _authRepository.getUserProfile(token as String, firebaseId),
           _authRepository.getBalance(token, firebaseId),
           _vehicleRepository.getUserVehicles(userId, token),
-          _getActividadSimulada(),
+          _getActividadReciente(),
         ]);
 
         final user = results[0] as User;
-        // El nombre lo sacamos del perfil o usamos el ID de backup
         final String name = (user.name != null)
             ? user.name
             : "Usuario";
@@ -51,8 +50,30 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getActividadSimulada() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return [];
+  Future<List<Map<String, dynamic>>> _getActividadReciente() async {
+    // Mock de datos de actividad
+    return [
+      {
+        'title': 'Estacionamiento UTN',
+        'date': 'Hoy',
+        'time': '10:30 AM',
+        'amount': '1.200',
+        'type': 'ingreso',
+      },
+      {
+        'title': 'Carga de saldo',
+        'date': 'Ayer',
+        'time': '04:15 PM',
+        'amount': '5.000',
+        'type': 'carga',
+      },
+      {
+        'title': 'Estacionamiento UTN',
+        'date': '15 Ago',
+        'time': '08:45 AM',
+        'amount': '1.200',
+        'type': 'ingreso',
+      },
+    ];
   }
 }

@@ -16,24 +16,21 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Llave para el formulario de registro
   final _formKey = GlobalKey<FormState>();
-  
-  // Controladores para los campos
+
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _legajoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  // Estado local para el checkbox de términos
+  String? _selectedDomain;
+  bool _showDomainError = false;
   bool _acceptTerms = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _legajoController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -44,13 +41,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        // Manejamos los estados globales de Auth
         if (state is AuthLoading) {
           setState(() => _isLoading = true);
         } else if (state is AuthError) {
           setState(() => _isLoading = false);
           
-          // Traducimos errores comunes si vienen del back o Firebase
           String message = state.message;
           if (message.contains('email-already-in-use')) {
             message = 'Este correo ya está registrado';
@@ -73,7 +68,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           );
 
-          // Volvemos a la raíz para que el main.dart decida mostrar el Home
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
       },
@@ -81,16 +75,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: Stack(
           children: [
             // Círculos decorativos
-            Positioned(
-              top: -100,
-              right: -50,
-              child: _buildDecorativeCircle(250, AppColors.circulos.withValues(alpha: 0.5)),
-            ),
-            Positioned(
-              top: 150,
-              left: -80,
-              child: _buildDecorativeCircle(200, AppColors.circulos.withValues(alpha: 0.5)),
-            ),
+            Positioned(top: -100, right: -50, child: _buildDecorativeCircle(250, AppColors.circulos.withValues(alpha: 0.5))),
+            Positioned(top: 150, left: -80, child: _buildDecorativeCircle(200, AppColors.circulos.withValues(alpha: 0.5))),
             
             SafeArea(
               child: SingleChildScrollView(
@@ -110,41 +96,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new,
-                            size: 20,
-                            color: AppColors.primary,
-                          ),
+                          child: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.primary),
                         ),
                       ),
                       
                       const SizedBox(height: 30),
-                      
-                      // Título de la pantalla
-                      Text(
-                        "Creá tu cuenta",
-                        style: AppTheme.lightTheme.textTheme.displayLarge,
-                      ),
-                      
+                      Text("Creá tu cuenta", style: AppTheme.lightTheme.textTheme.displayLarge),
                       const SizedBox(height: 8),
-                      
-                      // Subtítulo
-                      Text(
-                        "Usá tu correo institucional de la UTN FRC",
-                        style: GoogleFonts.inter(
-                          color: AppColors.textSecondary,
-                          fontSize: 15,
-                        ),
-                      ),
-                      
+                      Text("Unite a la comunidad de Parko", style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 15)),
                       const SizedBox(height: 32),
                       
                       // Campo: Nombre completo
@@ -154,31 +115,95 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _nameController,
                         validator: (value) => AppValidators.required(value, 'nombre completo'),
                       ),
-                      
                       const SizedBox(height: 20),
                       
-                      // Campo: Correo institucional
+                      // Campo: Legajo (ahora obligatorio para el mail)
                       CustomTextField(
-                        label: 'Correo institucional',
-                        hintText: 'legajo@carrera.frc.utn.edu.ar',
-                        controller: _emailController,
-                        helperText: 'Ej: legajo@sistemas.frc.utn.edu.ar',
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) => AppValidators.institutionalEmail(value),
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // Campo: Legajo (opcional pero con validación de número si pone algo)
-                      CustomTextField(
-                        label: 'Legajo (si tenés)',
-                        hintText: 'Ej: 82412',
+                        label: 'Legajo',
+                        hintText: '123456',
                         controller: _legajoController,
-                        helperText: 'Solo si sos alumno con legajo asignado',
                         keyboardType: TextInputType.number,
-                        validator: (value) => AppValidators.legajo(value),
+                        validator: (value) {
+                          final requiredErr = AppValidators.required(value, 'legajo');
+                          if (requiredErr != null) return requiredErr;
+                          return AppValidators.legajo(value);
+                        },
                       ),
+                      const SizedBox(height: 24),
                       
+                      // Selector de Carrera / Dominio
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4, bottom: 8),
+                            child: Text(
+                              "Carrera / Dominio",
+                              style: GoogleFonts.nunito(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                          MenuAnchor(
+                            style: MenuStyle(
+                              backgroundColor: WidgetStateProperty.all(Colors.white),
+                              elevation: WidgetStateProperty.all(12),
+                              shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                              fixedSize: const WidgetStatePropertyAll(Size(300, 300)),
+                            ),
+                            menuChildren: AppValidators.institutionalDomains.map((String domain) {
+                              return MenuItemButton(
+                                onPressed: () => setState(() => _selectedDomain = domain),
+                                child: Container(
+                                  width: 250,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    domain.toUpperCase(),
+                                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            builder: (context, controller, child) {
+                              return InkWell(
+                                onTap: () => controller.isOpen ? controller.close() : controller.open(),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.inputFieldBackground,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: controller.isOpen ? AppColors.primary : Colors.transparent,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _selectedDomain == null ? 'Seleccioná tu carrera' : _selectedDomain!.toUpperCase(),
+                                        style: GoogleFonts.nunito(
+                                          fontWeight: _selectedDomain == null ? FontWeight.w500 : FontWeight.w700,
+                                          fontSize: 15,
+                                          color: _selectedDomain == null ? AppColors.hintText : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          if (_showDomainError && _selectedDomain == null)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 16, top: 8),
+                              child: Text("Por favor, seleccioná un dominio", style: TextStyle(color: AppColors.error, fontSize: 12)),
+                            ),
+                        ],
+                      ),
                       const SizedBox(height: 20),
                       
                       // Campo: Contraseña
@@ -189,7 +214,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _passwordController,
                         validator: (value) => AppValidators.password(value),
                       ),
-
                       const SizedBox(height: 20),
 
                       CustomTextField(
@@ -199,41 +223,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _confirmPasswordController,
                         validator: (value) => AppValidators.confirmPassword(value, _passwordController.text),
                       ),
-
                       const SizedBox(height: 24),
 
-                      // Checkbox de términos y condiciones
+                      // Checkbox de términos
                       Row(
                         children: [
                           SizedBox(
-                            height: 24,
-                            width: 24,
+                            height: 24, width: 24,
                             child: Checkbox(
                               value: _acceptTerms,
                               activeColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  _acceptTerms = value ?? false;
-                                });
-                              },
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              onChanged: (value) => setState(() => _acceptTerms = value ?? false),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Acepto los términos y condiciones',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
+                          Expanded(child: Text('Acepto los términos y condiciones', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14))),
                         ],
                       ),
-                      
                       const SizedBox(height: 32),
                       
                       // Botón de crear cuenta
@@ -241,54 +248,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: (_isLoading || !_acceptTerms)
                           ? null
                           : () {
-                            if (!_formKey.currentState!.validate()) return;
+                            setState(() => _showDomainError = true);
+                            if (!_formKey.currentState!.validate() || _selectedDomain == null) return;
 
-                            // Llamada pro al Cubit
+                            // Armamos el email institucional
+                            final fullEmail = '${_legajoController.text.trim()}@$_selectedDomain.frc.utn.edu.ar';
+
                             context.read<AuthCubit>().registerUser(
                               name: _nameController.text.trim(),
-                              email: _emailController.text.trim(),
+                              email: fullEmail,
                               password: _passwordController.text,
                               termsAccepted: _acceptTerms,
-                              legajo: _legajoController.text.trim().isEmpty
-                                  ? null
-                                  : _legajoController.text.trim(),
+                              legajo: _legajoController.text.trim(),
                             );
                           },
                         child: _isLoading 
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                           : const Text('Crear cuenta'),
                       ),
                       
                       const SizedBox(height: 24),
-                      
-                      // Footer: ¿Ya tenés cuenta?
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            '¿Ya tenés cuenta? ',
-                            style: TextStyle(color: AppColors.textSecondary),
-                          ),
+                          const Text('¿Ya tenés cuenta? ', style: TextStyle(color: AppColors.textSecondary)),
                           GestureDetector(
                             onTap: () => Navigator.pop(context),
-                            child: const Text(
-                              'Iniciá sesión',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
+                            child: const Text('Iniciá sesión', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
                           ),
                         ],
                       ),
-                      
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -301,15 +290,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // El mismo constructor de circulitos para que pegue con el Login
   Widget _buildDecorativeCircle(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-    );
+    return Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
   }
 }

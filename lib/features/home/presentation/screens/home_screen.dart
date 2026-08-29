@@ -7,9 +7,14 @@ import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/domain/repositories/vehicle_repository.dart';
+import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
+import '../../../vehicles/presentation/bloc/vehicles_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../bloc/home_cubit.dart';
 import '../bloc/home_state.dart';
+import '../widgets/balance_card.dart';
+import '../widgets/actividad_reciente.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,19 +72,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               }
+
               String userName = "Usuario";
               if (state is HomeLoaded) {
                 userName = state.userName;
               }
               final String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : "U";
+
               return RefreshIndicator(
-                // Para actualizar la pantalla
-                onRefresh: () {
+                // Al deslizar para actualizar, refrescamos ambos: Home (saldo) y Vehículos
+                onRefresh: () async {
                   final authState = context.read<AuthCubit>().state;
                   if (authState is Authenticated) {
-                    return context.read<HomeCubit>().fetchHomeData(authState.user.id);
+                    await Future.wait([
+                      context.read<HomeCubit>().fetchHomeData(authState.user.id),
+                      context.read<VehiclesCubit>().fetchVehicles(authState.user.id),
+                    ]);
                   }
-                  return Future.value();
                 },
                 color: AppColors.primary,
                 child: SingleChildScrollView(
@@ -104,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               Text(
-                                userName.toUpperCase(),
+                                userName,
                                 style: GoogleFonts.nunito(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w900,
@@ -115,11 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Row(
                             children: [
-                              // Campanita con badge (fija por ahora)
                               _buildNotificationBell(),
                               const SizedBox(width: 12),
-                              // Inicial del perfil dinámica
-                              _buildProfileInitial(userInitial),
+                              // Inicial del perfil conectada con la ProfileScreen
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                                  );
+                                },
+                                child: _buildProfileInitial(userInitial),
+                              ),
                             ],
                           ),
                         ],
@@ -127,14 +143,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 32),
 
-                      _buildSaldoCard(state),
+                      if (state is HomeLoaded) BalanceCard(balance: state.balance),
 
                       const SizedBox(height: 32),
 
                       _buildPatentesHeader(context),
                       const SizedBox(height: 12),
-                      //_buildPatentesList(state),
-                      state is HomeLoaded ? PatentesList(vehicles: state.vehicles) : const SizedBox(),
+                      
+                      BlocBuilder<VehiclesCubit, VehiclesState>(
+                        builder: (context, vehiclesState) {
+                          if (vehiclesState is VehiclesLoaded) {
+                            return PatentesList(vehicles: vehiclesState.vehicles);
+                          }
+                          if (vehiclesState is VehiclesSuccess) {
+                            return PatentesList(vehicles: vehiclesState.vehicles);
+                          }
+                          return state is HomeLoaded 
+                              ? PatentesList(vehicles: state.vehicles) 
+                              : const SizedBox();
+                        },
+                      ),
 
                       const SizedBox(height: 32),
 
@@ -147,7 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildActividadList(state),
+                      
+                      // Actividad Reciente Mockeada para la Demo con tarjetas y iconos
+                      if (state is HomeLoaded) ActividadReciente(actividad: state.actividad),
 
                       const SizedBox(height: 40),
                     ],
@@ -214,80 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSaldoCard(HomeState state) {
-    String balanceStr = "0";
-    if (state is HomeLoaded) {
-      balanceStr = state.balance.toStringAsFixed(0).replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]}.'
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -40,
-            right: -40,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Saldo disponible",
-                style: GoogleFonts.inter(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "\$ $balanceStr",
-                style: GoogleFonts.nunito(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.primary,
-                  minimumSize: const Size(160, 48),
-                  elevation: 0,
-                ),
-                child: const Text('Cargar saldo'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPatentesHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -302,18 +258,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         TextButton(
           onPressed: () async {
-            final homeCubit = context.read<HomeCubit>();
-            final authCubit = context.read<AuthCubit>();
-            
             await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const MyVehiclesScreen()),
             );
-            
             if (mounted) {
-              final authState = authCubit.state;
+              final authState = context.read<AuthCubit>().state;
               if (authState is Authenticated) {
-                homeCubit.fetchHomeData(authState.user.id);
+                context.read<HomeCubit>().fetchHomeData(authState.user.id);
               }
             }
           },
@@ -327,38 +279,5 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
-  }
-
-
-
-  Widget _buildActividadList(HomeState state) {
-    if (state is HomeLoaded && state.actividad.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              Text(
-                "Todavía no tenés movimientos",
-                style: GoogleFonts.inter(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "¡Tus estacionamientos aparecerán acá!",
-                style: GoogleFonts.inter(
-                  color: AppColors.textSecondary.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return const SizedBox();
   }
 }
