@@ -15,6 +15,9 @@ import 'features/vehicles/data/repositories/vehicle_repository_impl.dart';
 import 'features/vehicles/domain/repositories/vehicle_repository.dart';
 import 'features/vehicles/presentation/bloc/vehicles_cubit.dart';
 import 'features/home/presentation/screens/main_navigation_screen.dart';
+import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
+import 'features/wallet/data/repositories/wallet_repository_impl.dart';
+import 'features/wallet/domain/repositories/wallet_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,11 +40,15 @@ class ParkoApp extends StatelessWidget {
     final vehicleRepository = VehicleRepositoryImpl(
       remoteDataSource: VehicleRemoteDataSourceImpl(client: httpClient),
     );
+    final walletRepository = WalletRepositoryImpl(
+      remoteDataSource: WalletRemoteDataSourceImpl(client: httpClient),
+    );
 
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>(create: (_) => authRepository),
         RepositoryProvider<VehicleRepository>(create: (_) => vehicleRepository),
+        RepositoryProvider<WalletRepository>(create: (_) => walletRepository),
       ],
       child: MultiBlocProvider(
         providers: [

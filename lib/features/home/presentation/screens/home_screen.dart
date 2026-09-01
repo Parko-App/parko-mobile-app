@@ -10,6 +10,7 @@ import '../../../vehicles/domain/repositories/vehicle_repository.dart';
 import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/bloc/vehicles_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
+import '../../../wallet/presentation/screens/top_up_screen.dart';
 import '../bloc/home_cubit.dart';
 import '../bloc/home_state.dart';
 import '../widgets/balance_card.dart';
@@ -27,16 +28,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      // Sacamos el nombre y el ID del AuthCubit global para dárselo al HomeCubit
       create: (context) {
         String userId = "";
-        final authState = context.read<AuthCubit>().state;
+        final authCubit = context.read<AuthCubit>();
+        final authState = authCubit.state;
         if (authState is Authenticated) {
           userId = authState.user.id;
         }
         return HomeCubit(
           authRepository: context.read<AuthRepository>(), 
           vehicleRepository: context.read<VehicleRepository>(),
+          authCubit: authCubit,
         )..fetchHomeData(userId);
       },
       child: Scaffold(
@@ -80,7 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
               final String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : "U";
 
               return RefreshIndicator(
-                // Al deslizar para actualizar, refrescamos ambos: Home (saldo) y Vehículos
                 onRefresh: () async {
                   final authState = context.read<AuthCubit>().state;
                   if (authState is Authenticated) {
@@ -126,7 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               _buildNotificationBell(),
                               const SizedBox(width: 12),
-                              // Inicial del perfil conectada con la ProfileScreen
                               GestureDetector(
                                 onTap: () {
                                   Navigator.push(
@@ -143,7 +143,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 32),
 
-                      if (state is HomeLoaded) BalanceCard(balance: state.balance),
+                      if (state is HomeLoaded) 
+                        BalanceCard(
+                          balance: state.balance,
+                          onTopUp: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TopUpScreen(initialBalance: state.balance),
+                              ),
+                            );
+                          },
+                        ),
 
                       const SizedBox(height: 32),
 
@@ -176,7 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Actividad Reciente Mockeada para la Demo con tarjetas y iconos
                       if (state is HomeLoaded) ActividadReciente(actividad: state.actividad),
 
                       const SizedBox(height: 40),
@@ -191,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Builders de los widgets (los quiero sacar a archivos diferentes despué)
+  // Builders auxiliares
 
   Widget _buildNotificationBell() {
     return Container(
@@ -201,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

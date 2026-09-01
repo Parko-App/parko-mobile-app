@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../vehicles/domain/entities/vehicle.dart';
 import '../../../vehicles/domain/repositories/vehicle_repository.dart';
 import 'home_state.dart';
@@ -9,13 +10,18 @@ import 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   final AuthRepository _authRepository;
   final VehicleRepository _vehicleRepository;
+  final AuthCubit _authCubit;
   final firebase.FirebaseAuth _firebaseAuth;
 
   HomeCubit({
-    required this._authRepository,
-    required this._vehicleRepository,
+    required AuthRepository authRepository,
+    required VehicleRepository vehicleRepository,
+    required AuthCubit authCubit,
     firebase.FirebaseAuth? firebaseAuth
-  }) : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
+  }) : _authRepository = authRepository,
+       _vehicleRepository = vehicleRepository,
+       _authCubit = authCubit,
+       _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
        super(HomeInitial());
 
   Future<void> fetchHomeData(String userId) async {
@@ -34,13 +40,14 @@ class HomeCubit extends Cubit<HomeState> {
         ]);
 
         final user = results[0] as User;
-        final String name = (user.name != null)
-            ? user.name
-            : "Usuario";
+        final double balance = results[1] as double;
+        final String name = (user.name != null) ? user.name : "Usuario";
+
+        _authCubit.updateBalance(balance);
 
         emit(HomeLoaded(
           userName: name,
-          balance: results[1] as double,
+          balance: balance,
           vehicles: results[2] as List<Vehicle>,
           actividad: results[3] as List<Map<String, dynamic>>,
         ));

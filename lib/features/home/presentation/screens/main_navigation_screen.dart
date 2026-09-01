@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +9,7 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../bloc/home_cubit.dart';
 import 'home_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -20,6 +23,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   DateTime? _lastBackPressTime;
 
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
+
   // Las 4 pantallas principales de la barra
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -29,9 +35,82 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _initDeepLinks() {
+    _appLinks = AppLinks();
+
+    // url que abrio la app desde cero
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handleDeepLink(uri);
+    });
+
+    // los url links de la app abierta
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    // links de retorno a la app (FIPO)
+    final String status = uri.host;
+
+    if (status == 'success') {
+      _showPaymentFeedback(
+        title: "¡Pago Exitoso!",
+        message: "Tu saldo se acreditará en unos instantes.",
+        isSuccess: true,
+      );
+      // Como Senior, después de un éxito refrescamos el saldo automáticamente
+      final authState = context.read<AuthCubit>().state;
+      if (authState is Authenticated) {
+        context.read<HomeCubit>().fetchHomeData(authState.user.id);
+      }
+    } else if (status == 'failure') {
+      _showPaymentFeedback(
+        title: "Pago Fallido",
+        message: "Hubo un error al procesar el pago. Intentá de nuevo.",
+        isSuccess: false,
+      );
+    } else if (status == 'pending') {
+      _showPaymentFeedback(
+        title: "Pago Pendiente",
+        message: "Estamos esperando la confirmación de Mercado Pago.",
+        isSuccess: true, // Lo mostramos en azul/verde porque no es error
+      );
+    }
+  }
+
+  void _showPaymentFeedback({required String title, required String message, required bool isSuccess}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(title, style: TextStyle(color: isSuccess ? Colors.green : Colors.red)),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Entendido"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Siempre interceptamos para manejar la lógica personalizada
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 

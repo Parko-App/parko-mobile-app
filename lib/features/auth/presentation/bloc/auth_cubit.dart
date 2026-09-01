@@ -14,17 +14,14 @@ class AuthCubit extends Cubit<AuthState> {
   })  : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
         super(AuthInitial());
 
-  /// Este método chequea si ya hay una sesión activa al abrir la app.
   Future<void> checkAuthStatus() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
       try {
         final token = await firebaseUser.getIdToken();
-        // Buscamos el perfil real en el backend usando el UID de Firebase
         final user = await _authRepository.getUserProfile(token!, firebaseUser.uid);
         emit(Authenticated(user));
       } catch (e) {
-        // Si falla el back, por seguridad deslogueamos de Firebase
         await logout();
         emit(Unauthenticated());
       }
@@ -33,7 +30,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// PROCESO DE LOGIN UNIFICADO
   Future<void> login(String email, String password) async {
     emit(AuthLoading());
     
@@ -43,8 +39,7 @@ class AuthCubit extends Cubit<AuthState> {
       final token = await _firebaseAuth.currentUser?.getIdToken();
 
       final userFull = await _authRepository.getUserProfile(token!, userFromFirebase.id);
-      
-      // 4. Si todo salió bien, emitimos el éxito
+
       emit(Authenticated(userFull));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
@@ -77,7 +72,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Cierre de sesión persistente
   Future<void> logout() async {
     await _firebaseAuth.signOut();
     emit(Unauthenticated());
@@ -98,6 +92,21 @@ class AuthCubit extends Cubit<AuthState> {
         legajo: currentState.user.legajo,
         balance: currentState.user.balance,
         notificationsEnabled: enabled,
+      );
+      emit(Authenticated(updatedUser));
+    }
+  }
+
+  void updateBalance(double newBalance) {
+    final currentState = state;
+    if (currentState is Authenticated) {
+      final updatedUser = User(
+        id: currentState.user.id,
+        name: currentState.user.name,
+        email: currentState.user.email,
+        legajo: currentState.user.legajo,
+        balance: newBalance, // Nuevo saldo
+        notificationsEnabled: currentState.user.notificationsEnabled,
       );
       emit(Authenticated(updatedUser));
     }

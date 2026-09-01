@@ -4,8 +4,9 @@ import '../../../../core/theme/app_colors.dart';
 
 class BalanceCard extends StatelessWidget {
   final double balance;
+  final VoidCallback? onTopUp;
 
-  const BalanceCard({super.key, required this.balance});
+  const BalanceCard({super.key, required this.balance, this.onTopUp});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +67,7 @@ class BalanceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: onTopUp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
