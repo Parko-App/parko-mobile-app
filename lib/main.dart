@@ -15,11 +15,14 @@ import 'features/vehicles/data/repositories/vehicle_repository_impl.dart';
 import 'features/vehicles/domain/repositories/vehicle_repository.dart';
 import 'features/vehicles/presentation/bloc/vehicles_cubit.dart';
 import 'features/home/presentation/screens/main_navigation_screen.dart';
+import 'features/home/presentation/bloc/home_cubit.dart';
+import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
+import 'features/wallet/data/repositories/wallet_repository_impl.dart';
+import 'features/wallet/domain/repositories/wallet_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  //await FirebaseAuth.instance.signOut(); // forzar login si ya habia una sesion abierta
   runApp(const ParkoApp());
 }
 
@@ -30,26 +33,35 @@ class ParkoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final httpClient = http.Client();
     
-    // Definimos los repositorios
     final authRepository = AuthRepositoryImpl(
       remoteDataSource: AuthRemoteDataSourceImpl(client: httpClient),
     );
     final vehicleRepository = VehicleRepositoryImpl(
       remoteDataSource: VehicleRemoteDataSourceImpl(client: httpClient),
     );
+    final walletRepository = WalletRepositoryImpl(
+      remoteDataSource: WalletRemoteDataSourceImpl(client: httpClient),
+    );
 
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>(create: (_) => authRepository),
         RepositoryProvider<VehicleRepository>(create: (_) => vehicleRepository),
+        RepositoryProvider<WalletRepository>(create: (_) => walletRepository),
       ],
       child: MultiBlocProvider(
         providers: [
+          // 1. AuthCubit: Dueño del Usuario y el Saldo Global
           BlocProvider(
             create: (context) => AuthCubit(authRepository: authRepository)..checkAuthStatus(),
           ),
+          // 2. VehiclesCubit: Dueño de la lista sincronizada de autos
           BlocProvider(
             create: (context) => VehiclesCubit(vehicleRepository: vehicleRepository),
+          ),
+          // 3. HomeCubit: Dueño de la lógica de pantalla de Inicio (Actividad)
+          BlocProvider(
+            create: (context) => HomeCubit(),
           ),
         ],
         child: MaterialApp(

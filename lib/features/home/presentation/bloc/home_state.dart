@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../../vehicles/domain/entities/vehicle.dart';
 
 abstract class HomeState extends Equatable {
   const HomeState();
@@ -12,20 +11,13 @@ class HomeInitial extends HomeState {}
 class HomeLoading extends HomeState {}
 
 class HomeLoaded extends HomeState {
-  final String userName;
-  final double balance;
-  final List<Vehicle> vehicles; // Ahora usamos la entidad Vehicle
+  // Ahora el HomeCubit solo se encarga de los movimientos/actividad
   final List<Map<String, dynamic>> actividad;
 
-  const HomeLoaded({
-    required this.userName,
-    required this.balance,
-    required this.vehicles,
-    required this.actividad,
-  });
+  const HomeLoaded({required this.actividad});
 
   @override
-  List<Object?> get props => [userName, balance, vehicles, actividad];
+  List<Object?> get props => [actividad];
 }
 
 class HomeError extends HomeState {

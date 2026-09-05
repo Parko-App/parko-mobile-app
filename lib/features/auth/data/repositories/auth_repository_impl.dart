@@ -45,7 +45,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User> getUserProfile(String token, String firebaseId) async {
-    return await remoteDataSource.getUserProfile(token, firebaseId);
+
+    final results = await Future.wait([
+      remoteDataSource.getUserProfile(token, firebaseId),
+      remoteDataSource.getBalance(token, firebaseId),
+    ]);
+
+    final user = results[0] as User;
+    final balance = results[1] as double;
+
+    return user.copyWith(balance: balance);
   }
 
   @override
@@ -58,6 +67,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final credential = await firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
       final firebaseUser = credential.user!;
+
       return User(
         id: firebaseUser.uid,
         name: firebaseUser.displayName ?? '',
