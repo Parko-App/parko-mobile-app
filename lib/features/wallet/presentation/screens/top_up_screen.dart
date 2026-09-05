@@ -9,6 +9,7 @@ import '../../domain/repositories/wallet_repository.dart';
 import '../bloc/wallet_cubit.dart';
 import '../bloc/wallet_state.dart';
 import '../../../home/presentation/widgets/balance_card.dart';
+import '../../../home/presentation/bloc/home_cubit.dart';
 
 class TopUpScreen extends StatefulWidget {
   final double initialBalance;
@@ -20,7 +21,7 @@ class TopUpScreen extends StatefulWidget {
 }
 
 class _TopUpScreenState extends State<TopUpScreen> {
-  late double _currentBalance; // Usamos un estado interno para el saldo
+  late double _currentBalance;
   double _selectedAmount = 3000;
   final _customAmountController = TextEditingController();
   bool _isCustomAmount = false;
@@ -56,8 +57,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
   }
 
   Future<void> _launchMercadoPago(BuildContext context, String url) async {
-    final theme = Theme.of(context);
     try {
+      final homeCubit = context.read<HomeCubit>();
+      final authState = context.read<AuthCubit>().state;
+
       await launchUrl(
         Uri.parse(url),
         customTabsOptions: CustomTabsOptions(
@@ -72,6 +75,11 @@ class _TopUpScreenState extends State<TopUpScreen> {
           ),
         ),
       );
+
+      if (authState is Authenticated) {
+        homeCubit.fetchHomeData(authState.user.id);
+      }
+      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +126,6 @@ class _TopUpScreenState extends State<TopUpScreen> {
           ),
           body: BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
-
               double currentBalance = _currentBalance;
               if (authState is Authenticated) {
                 currentBalance = authState.user.balance ?? _currentBalance;
@@ -130,7 +137,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    BalanceCard(balance: currentBalance),
+
+                    BalanceCard(balance: currentBalance, showButton: false),
+
                     const SizedBox(height: 32),
                     
                     Text(

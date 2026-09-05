@@ -5,8 +5,14 @@ import '../../../../core/theme/app_colors.dart';
 class BalanceCard extends StatelessWidget {
   final double balance;
   final VoidCallback? onTopUp;
+  final bool showButton; // Nueva propiedad para ocultar el botón
 
-  const BalanceCard({super.key, required this.balance, this.onTopUp});
+  const BalanceCard({
+    super.key, 
+    required this.balance, 
+    this.onTopUp,
+    this.showButton = true, // Por defecto se muestra (para la Home)
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,17 +71,20 @@ class BalanceCard extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: onTopUp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primary,
-                      minimumSize: const Size(160, 48),
-                      elevation: 0,
+                  // Solo dibujamos el botón si showButton es true
+                  if (showButton) ...[
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: onTopUp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        minimumSize: const Size(160, 48),
+                        elevation: 0,
+                      ),
+                      child: const Text('Cargar saldo'),
                     ),
-                    child: const Text('Cargar saldo'),
-                  ),
+                  ],
                 ],
               ),
             ),

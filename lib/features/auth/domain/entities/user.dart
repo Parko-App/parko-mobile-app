@@ -1,10 +1,12 @@
-class User {
+import 'package:equatable/equatable.dart';
+
+class User extends Equatable {
   final String id;
   final String name;
   final String email;
   final String? legajo;
   final double? balance;
-  final bool notificationsEnabled; // local hasta que esté en el back
+  final bool notificationsEnabled;
   final String? rol;
 
   const User({
@@ -16,4 +18,7 @@ class User {
     this.balance = 0.0,
     this.notificationsEnabled = true,
   });
+
+  @override
+  List<Object?> get props => [id, name, email, legajo, balance, notificationsEnabled, rol];
 }

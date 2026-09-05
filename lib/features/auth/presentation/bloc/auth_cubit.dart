@@ -32,7 +32,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> login(String email, String password) async {
     emit(AuthLoading());
-    
+
     try {
       final userFromFirebase = await _authRepository.login(email: email, password: password);
 

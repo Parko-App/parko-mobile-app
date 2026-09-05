@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
           userId = authState.user.id;
         }
         return HomeCubit(
-          authRepository: context.read<AuthRepository>(), 
+          authRepository: context.read<AuthRepository>(),
           vehicleRepository: context.read<VehicleRepository>(),
           authCubit: authCubit,
         )..fetchHomeData(userId);
@@ -143,14 +143,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 32),
 
-                      if (state is HomeLoaded) 
+                      if (state is HomeLoaded)
                         BalanceCard(
                           balance: state.balance,
                           onTopUp: () {
+                            // ponemos al homecubit en una variable para poder inyectarlo a la pantalla de carga
+                            final homeCubit = context.read<HomeCubit>();
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => TopUpScreen(initialBalance: state.balance),
+                                builder: (context) => BlocProvider.value(
+                                  value: homeCubit,
+                                  child: TopUpScreen(initialBalance: state.balance),
+                                ),
                               ),
                             );
                           },
@@ -160,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       _buildPatentesHeader(context),
                       const SizedBox(height: 12),
-                      
+
                       BlocBuilder<VehiclesCubit, VehiclesState>(
                         builder: (context, vehiclesState) {
                           if (vehiclesState is VehiclesLoaded) {
@@ -169,8 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (vehiclesState is VehiclesSuccess) {
                             return PatentesList(vehicles: vehiclesState.vehicles);
                           }
-                          return state is HomeLoaded 
-                              ? PatentesList(vehicles: state.vehicles) 
+                          return state is HomeLoaded
+                              ? PatentesList(vehicles: state.vehicles)
                               : const SizedBox();
                         },
                       ),
@@ -186,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       if (state is HomeLoaded) ActividadReciente(actividad: state.actividad),
 
                       const SizedBox(height: 40),

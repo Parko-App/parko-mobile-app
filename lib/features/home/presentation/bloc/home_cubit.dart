@@ -31,7 +31,7 @@ class HomeCubit extends Cubit<HomeState> {
       try {
         String? token = await firebaseUser.getIdToken();
         String firebaseId = firebaseUser.uid;
-        
+
         final results = await Future.wait([
           _authRepository.getUserProfile(token as String, firebaseId),
           _authRepository.getBalance(token, firebaseId),
