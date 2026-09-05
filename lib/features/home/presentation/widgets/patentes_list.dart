@@ -8,7 +8,7 @@ import '../../../vehicles/domain/entities/vehicle.dart';
 import '../../../vehicles/presentation/widgets/vehicle_card.dart';
 import '../../../vehicles/presentation/screens/add_vehicle_screen.dart';
 import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
-import '../bloc/home_cubit.dart';
+import '../../../transactions/presentation/bloc/transaction_cubit.dart';
 
 class PatentesList extends StatelessWidget {
   final List<Vehicle> vehicles;
@@ -29,9 +29,9 @@ class PatentesList extends StatelessWidget {
       if (result == true && context.mounted) {
         final authState = context.read<AuthCubit>().state;
         if (authState is Authenticated) {
-          // Refrescamos autos y actividad después de agregar uno nuevo
+          // Refrescamos autos y actividad reciente después de agregar uno nuevo
           context.read<VehiclesCubit>().fetchVehicles(authState.user.id);
-          context.read<HomeCubit>().fetchHomeData(authState.user.id);
+          context.read<TransactionCubit>().fetchRecentTransactions(authState.user.id);
         }
       }
     }

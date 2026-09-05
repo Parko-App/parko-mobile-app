@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../transactions/domain/entities/transaction.dart';
 
 class ActividadReciente extends StatelessWidget {
-  final List<Map<String, dynamic>> actividad;
+  final List<Transaction> actividad;
 
   const ActividadReciente({super.key, required this.actividad});
 
@@ -40,11 +41,11 @@ class ActividadReciente extends StatelessWidget {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: actividad.length,
+      itemCount: actividad.length > 5 ? 5 : actividad.length, // Mostramos máximo 5 en el Home
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final item = actividad[index];
-        final bool isIngreso = item['type'] == 'ingreso';
+        final tx = actividad[index];
+        final bool isExpense = tx.type == TransactionType.income; // Mock 'ingreso' = auto rojo (gasto)
         
         return Container(
           padding: const EdgeInsets.all(16),
@@ -58,12 +59,12 @@ class ActividadReciente extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (isIngreso ? Colors.red : Colors.green).withOpacity(0.1),
+                  color: (isExpense ? Colors.red : Colors.green).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isIngreso ? Icons.arrow_back_outlined : Icons.money,
-                  color: isIngreso ? Colors.red : Colors.green,
+                  isExpense ? Icons.directions_car_filled_outlined : Icons.add_card_outlined,
+                  color: isExpense ? Colors.red : Colors.green,
                   size: 20,
                 ),
               ),
@@ -73,7 +74,7 @@ class ActividadReciente extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item['title'],
+                      tx.title,
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
@@ -81,7 +82,7 @@ class ActividadReciente extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "${item['date']} • ${item['time']}",
+                      "${tx.date} • ${tx.time}",
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -91,11 +92,11 @@ class ActividadReciente extends StatelessWidget {
                 ),
               ),
               Text(
-                "${isIngreso ? '-' : '+'} \$ ${item['amount']}",
+                "${isExpense ? '-' : '+'} \$ ${tx.amount}",
                 style: GoogleFonts.nunito(
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
-                  color: isIngreso ? Colors.red : Colors.green,
+                  color: isExpense ? Colors.red : Colors.green,
                 ),
               ),
             ],

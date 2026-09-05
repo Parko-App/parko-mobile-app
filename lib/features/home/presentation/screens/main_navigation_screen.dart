@@ -9,6 +9,7 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../transactions/presentation/screens/history_screen.dart';
 import '../bloc/home_cubit.dart';
 import 'home_screen.dart';
 
@@ -26,9 +27,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
+  // Las 4 pantallas principales de la barra
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Center(child: Text("Historial (Próximamente)")),
+    const HistoryScreen(), // ¡Activada la pantalla de Historial real!
     const MyVehiclesScreen(),
     const ProfileScreen(),
   ];
@@ -66,9 +68,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         message: "Tu saldo se acreditará en unos instantes.",
         isSuccess: true,
       );
-
       context.read<AuthCubit>().refreshProfile();
-
     } else if (status == 'failure') {
       _showPaymentFeedback(
         title: "Pago Fallido",
