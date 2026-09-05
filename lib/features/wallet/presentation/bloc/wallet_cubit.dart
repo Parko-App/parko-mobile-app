@@ -14,7 +14,7 @@ class WalletCubit extends Cubit<WalletState> {
         _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
         super(WalletInitial());
 
-  Future<void> prepareTopUp(String uuid, double amount) async {
+  Future<void> prepareTopUp({required String uuid, required double amount}) async {
     if (amount <= 0) {
       emit(const WalletError("El monto debe ser mayor a 0"));
       return;

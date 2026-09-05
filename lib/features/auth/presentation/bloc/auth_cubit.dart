@@ -32,22 +32,18 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> login(String email, String password) async {
     emit(AuthLoading());
-
     try {
       final userFromFirebase = await _authRepository.login(email: email, password: password);
-
       final token = await _firebaseAuth.currentUser?.getIdToken();
-
+      // userFromFirebase.id es el UID de Firebase (ver repositorio)
       final userFull = await _authRepository.getUserProfile(token!, userFromFirebase.id);
-
       emit(Authenticated(userFull));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
-      logout();
+      await logout();
     }
   }
 
-  /// PROCESO DE REGISTRO UNIFICADO
   Future<void> registerUser({
     required String name,
     required String email,
@@ -56,7 +52,6 @@ class AuthCubit extends Cubit<AuthState> {
     String? legajo,
   }) async {
     emit(AuthLoading());
-
     try {
       final user = await _authRepository.register(
         name: name,
@@ -65,50 +60,51 @@ class AuthCubit extends Cubit<AuthState> {
         termsAccepted: termsAccepted,
         legajo: legajo,
       );
-
-      emit(Authenticated(user));
+      final token = await _firebaseAuth.currentUser?.getIdToken();
+      final userFull = await _authRepository.getUserProfile(token!, user.id);
+      emit(Authenticated(userFull));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 
+  /// Refresca los datos del usuario (saldo incluido) desde el backend
+  Future<void> refreshProfile() async {
+    final currentState = state;
+    final firebaseUser = _firebaseAuth.currentUser;
+    
+    if (currentState is Authenticated && firebaseUser != null) {
+      try {
+        final token = await firebaseUser.getIdToken();
+        if (token == null) return;
+
+        final updatedUser = await _authRepository.getUserProfile(token, firebaseUser.uid);
+        emit(Authenticated(updatedUser));
+      } catch (_) {
+        // En refrescos automáticos no bloqueamos la UI
+      }
+    }
+  }
+
+  /// Cierre de sesión
   Future<void> logout() async {
     await _firebaseAuth.signOut();
     emit(Unauthenticated());
   }
-/*
-  void register(User user) {
-    emit(Authenticated(user));
-  }
-*/
 
+  /// Preferencia local de notificaciones
   void toggleNotifications(bool enabled) {
     final currentState = state;
     if (currentState is Authenticated) {
-      final updatedUser = User(
-        id: currentState.user.id,
-        name: currentState.user.name,
-        email: currentState.user.email,
-        legajo: currentState.user.legajo,
-        balance: currentState.user.balance,
-        notificationsEnabled: enabled,
-      );
-      emit(Authenticated(updatedUser));
+      emit(Authenticated(currentState.user.copyWith(notificationsEnabled: enabled)));
     }
   }
 
+  /// Actualiza el balance manualmente si fuera necesario
   void updateBalance(double newBalance) {
     final currentState = state;
     if (currentState is Authenticated) {
-      final updatedUser = User(
-        id: currentState.user.id,
-        name: currentState.user.name,
-        email: currentState.user.email,
-        legajo: currentState.user.legajo,
-        balance: newBalance, // Nuevo saldo
-        notificationsEnabled: currentState.user.notificationsEnabled,
-      );
-      emit(Authenticated(updatedUser));
+      emit(Authenticated(currentState.user.copyWith(balance: newBalance)));
     }
   }
 }

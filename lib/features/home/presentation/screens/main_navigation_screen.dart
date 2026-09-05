@@ -26,7 +26,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
-  // Las 4 pantallas principales de la barra
   final List<Widget> _screens = [
     const HomeScreen(),
     const Center(child: Text("Historial (Próximamente)")),
@@ -49,19 +48,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _initDeepLinks() {
     _appLinks = AppLinks();
 
-    // url que abrio la app desde cero
     _appLinks.getInitialLink().then((uri) {
       if (uri != null) _handleDeepLink(uri);
     });
 
-    // los url links de la app abierta
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       _handleDeepLink(uri);
     });
   }
 
   void _handleDeepLink(Uri uri) {
-    // links de retorno a la app (FIPO)
     final String status = uri.host;
 
     if (status == 'success') {
@@ -70,11 +66,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         message: "Tu saldo se acreditará en unos instantes.",
         isSuccess: true,
       );
-      // Como Senior, después de un éxito refrescamos el saldo automáticamente
-      final authState = context.read<AuthCubit>().state;
-      if (authState is Authenticated) {
-        context.read<HomeCubit>().fetchHomeData(authState.user.id);
-      }
+
+      context.read<AuthCubit>().refreshProfile();
+
     } else if (status == 'failure') {
       _showPaymentFeedback(
         title: "Pago Fallido",
@@ -85,7 +79,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showPaymentFeedback(
         title: "Pago Pendiente",
         message: "Estamos esperando la confirmación de Mercado Pago.",
-        isSuccess: true, // Lo mostramos en azul/verde porque no es error
+        isSuccess: true,
       );
     }
   }
@@ -150,7 +144,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
               ),

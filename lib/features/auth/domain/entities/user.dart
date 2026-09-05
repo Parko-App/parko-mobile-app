@@ -19,6 +19,26 @@ class User extends Equatable {
     this.notificationsEnabled = true,
   });
 
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? legajo,
+    double? balance,
+    bool? notificationsEnabled,
+    String? rol,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      legajo: legajo ?? this.legajo,
+      balance: balance ?? this.balance,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      rol: rol ?? this.rol,
+    );
+  }
+
   @override
   List<Object?> get props => [id, name, email, legajo, balance, notificationsEnabled, rol];
 }

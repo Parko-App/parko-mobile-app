@@ -9,7 +9,6 @@ import '../../domain/repositories/wallet_repository.dart';
 import '../bloc/wallet_cubit.dart';
 import '../bloc/wallet_state.dart';
 import '../../../home/presentation/widgets/balance_card.dart';
-import '../../../home/presentation/bloc/home_cubit.dart';
 
 class TopUpScreen extends StatefulWidget {
   final double initialBalance;
@@ -21,18 +20,11 @@ class TopUpScreen extends StatefulWidget {
 }
 
 class _TopUpScreenState extends State<TopUpScreen> {
-  late double _currentBalance;
   double _selectedAmount = 3000;
   final _customAmountController = TextEditingController();
   bool _isCustomAmount = false;
 
   final List<double> _predefinedAmounts = [3000, 10000, 5000];
-
-  @override
-  void initState() {
-    super.initState();
-    _currentBalance = widget.initialBalance;
-  }
 
   @override
   void dispose() {
@@ -57,10 +49,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
   }
 
   Future<void> _launchMercadoPago(BuildContext context, String url) async {
+    final authCubit = context.read<AuthCubit>();
+    
     try {
-      final homeCubit = context.read<HomeCubit>();
-      final authState = context.read<AuthCubit>().state;
-
       await launchUrl(
         Uri.parse(url),
         customTabsOptions: CustomTabsOptions(
@@ -76,9 +67,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
         ),
       );
 
-      if (authState is Authenticated) {
-        homeCubit.fetchHomeData(authState.user.id);
-      }
+      await authCubit.refreshProfile();
       
     } catch (e) {
       if (mounted) {
@@ -126,9 +115,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
           ),
           body: BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
-              double currentBalance = _currentBalance;
+              // El saldo siempre se lee del AuthCubit
+              double currentBalance = widget.initialBalance;
               if (authState is Authenticated) {
-                currentBalance = authState.user.balance ?? _currentBalance;
+                currentBalance = authState.user.balance ?? widget.initialBalance;
               }
 
               return SingleChildScrollView(
@@ -137,9 +127,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-
                     BalanceCard(balance: currentBalance, showButton: false),
-
                     const SizedBox(height: 32),
                     
                     Text(
@@ -231,8 +219,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
                             : () {
                               if (authState is Authenticated) {
                                 context.read<WalletCubit>().prepareTopUp(
-                                  authState.user.id, 
-                                  _selectedAmount
+                                  uuid: authState.user.id, // ID del backend
+                                  amount: _selectedAmount,
                                 );
                               }
                             },
