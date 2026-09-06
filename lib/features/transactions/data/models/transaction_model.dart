@@ -25,7 +25,7 @@ class TransactionModel extends Transaction {
     switch (type) {
       case 'carga':
         return TransactionType.charge;
-      case 'ingreso': // In backend, 'ingreso' seems to be used for parking expense?
+      case 'ingreso':
         return TransactionType.income;
       default:
         return TransactionType.expense;

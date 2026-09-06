@@ -10,6 +10,7 @@ import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../transactions/presentation/screens/history_screen.dart';
+import '../../../transactions/presentation/bloc/transaction_cubit.dart';
 import '../bloc/home_cubit.dart';
 import 'home_screen.dart';
 
@@ -30,7 +31,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   // Las 4 pantallas principales de la barra
   final List<Widget> _screens = [
     const HomeScreen(),
-    const HistoryScreen(), // ¡Activada la pantalla de Historial real!
+    const HistoryScreen(),
     const MyVehiclesScreen(),
     const ProfileScreen(),
   ];
@@ -39,12 +40,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _initDeepLinks();
+    _startTransactionPolling();
   }
 
   @override
   void dispose() {
     _linkSubscription?.cancel();
+    context.read<TransactionCubit>().stopPolling();
     super.dispose();
+  }
+
+  void _startTransactionPolling() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is Authenticated) {
+      // Iniciamos el polling global de movimientos
+      context.read<TransactionCubit>().startPolling(authState.user.id);
+    }
   }
 
   void _initDeepLinks() {

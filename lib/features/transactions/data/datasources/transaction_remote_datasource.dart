@@ -76,7 +76,6 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
 
   @override
   Future<List<TransactionModel>> getRecentTransactions(String userId, String token) async {
-    // CUANDO EL BACK ESTÉ LISTO
     /*
     final url = Uri.parse(ApiConfig.getTransactions(userId));
     final response = await client.get(
@@ -96,7 +95,6 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
 
   @override
   Future<List<TransactionModel>> getMonthlyTransactions(String userId, String token, int month, int year) async {
-    // CUANDO EL BACK ESTÉ LISTO
     /*
     final url = Uri.parse('${ApiConfig.getTransactions(userId)}?month=$month&year=$year');
     final response = await client.get(
