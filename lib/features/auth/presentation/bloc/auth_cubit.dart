@@ -61,7 +61,8 @@ class AuthCubit extends Cubit<AuthState> {
         legajo: legajo,
       );
       final token = await _firebaseAuth.currentUser?.getIdToken();
-      final userFull = await _authRepository.getUserProfile(token!, user.id);
+      final firebaseUser = _firebaseAuth.currentUser;
+      final userFull = await _authRepository.getUserProfile(token!, firebaseUser!.uid);
       emit(Authenticated(userFull));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
