@@ -8,6 +8,8 @@ class TransactionState extends Equatable {
   final bool isLoadingMonthly;
   final int selectedMonth;
   final int selectedYear;
+  final int monthlyPage;
+  final int monthlyTotalPages;
   final String? errorMessage;
 
   const TransactionState({
@@ -17,6 +19,8 @@ class TransactionState extends Equatable {
     this.isLoadingMonthly = false,
     this.selectedMonth = 1,
     this.selectedYear = 2026,
+    this.monthlyPage = 0,
+    this.monthlyTotalPages = 1,
     this.errorMessage,
   });
 
@@ -27,6 +31,8 @@ class TransactionState extends Equatable {
     bool? isLoadingMonthly,
     int? selectedMonth,
     int? selectedYear,
+    int? monthlyPage,
+    int? monthlyTotalPages,
     String? errorMessage,
   }) {
     return TransactionState(
@@ -36,6 +42,8 @@ class TransactionState extends Equatable {
       isLoadingMonthly: isLoadingMonthly ?? this.isLoadingMonthly,
       selectedMonth: selectedMonth ?? this.selectedMonth,
       selectedYear: selectedYear ?? this.selectedYear,
+      monthlyPage: monthlyPage ?? this.monthlyPage,
+      monthlyTotalPages: monthlyTotalPages ?? this.monthlyTotalPages,
       errorMessage: errorMessage,
     );
   }
@@ -48,6 +56,8 @@ class TransactionState extends Equatable {
         isLoadingMonthly,
         selectedMonth,
         selectedYear,
+        monthlyPage,
+        monthlyTotalPages,
         errorMessage,
       ];
 }

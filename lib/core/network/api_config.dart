@@ -1,12 +1,12 @@
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080',
-  ); // 10.0.2.2 para emulador
+    defaultValue: 'https://api.parko.site',
+  );
 
   static const String balanceBaseUrl = String.fromEnvironment(
     'BALANCE_API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8082',
+    defaultValue: 'https://api.parko.site',
   );
 
   static const String userEndpoint = '$baseUrl/api/v1/user';
@@ -17,6 +17,6 @@ class ApiConfig {
   /// Obtener el saldo del usuario
   static String getBalance(String token, String firebaseId) => '$userEndpoint/$firebaseId/balance';
 
-  /// Historial de transacciones
-  static String getTransactions(String userId) => '$baseUrl/api/v1/transactions/$userId';
+  /// Historial de transacciones (balance-service, el userId sale del token, no va en el path)
+  static String getTransactions() => '$balanceBaseUrl/api/v1/balance/transactions';
 }

@@ -33,13 +33,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _loadTransactions();
   }
 
-  void _loadTransactions() {
+  void _loadTransactions({int page = 0}) {
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
       context.read<TransactionCubit>().fetchMonthlyTransactions(
         authState.user.id,
         _selectedMonth,
         _selectedYear,
+        page: page,
       );
     }
   }
@@ -76,12 +77,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 if (state.isLoadingMonthly) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 if (state.errorMessage != null && state.monthlyTransactions.isEmpty) {
                   return Center(child: Text(state.errorMessage!));
                 }
 
-                return _buildTransactionList(state.monthlyTransactions);
+                return Column(
+                  children: [
+                    Expanded(child: _buildTransactionList(state.monthlyTransactions)),
+                    _buildPager(state),
+                  ],
+                );
               },
             ),
           ),
@@ -129,6 +135,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 },
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPager(TransactionState state) {
+    if (state.monthlyTotalPages <= 1) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            color: AppColors.primary,
+            onPressed: state.monthlyPage > 0 ? () => _loadTransactions(page: state.monthlyPage - 1) : null,
+          ),
+          Text(
+            "Página ${state.monthlyPage + 1} de ${state.monthlyTotalPages}",
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            color: AppColors.primary,
+            onPressed: state.monthlyPage + 1 < state.monthlyTotalPages
+                ? () => _loadTransactions(page: state.monthlyPage + 1)
+                : null,
           ),
         ],
       ),
