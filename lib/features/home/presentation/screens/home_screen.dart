@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:parko_mobile_app/features/home/presentation/widgets/patentes_list.dart';
+import '../../../transactions/presentation/screens/history_screen.dart';
+import '../widgets/patentes_list.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -10,6 +11,8 @@ import '../../../vehicles/presentation/bloc/vehicles_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../../../vehicles/domain/entities/vehicle.dart';
 import '../../../wallet/presentation/screens/top_up_screen.dart';
+import '../../../transactions/presentation/bloc/transaction_cubit.dart';
+import '../../../transactions/presentation/bloc/transaction_state.dart';
 import '../bloc/home_cubit.dart';
 import '../bloc/home_state.dart';
 import '../widgets/balance_card.dart';
@@ -28,19 +31,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Refrescamos todos los datos al iniciar
     _refreshAllData();
   }
 
   Future<void> _refreshAllData() async {
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
-      final token = await firebase.FirebaseAuth.instance.currentUser?.getIdToken();
-
       await Future.wait([
         context.read<AuthCubit>().refreshProfile(),
         context.read<VehiclesCubit>().fetchVehicles(authState.user.id),
-        context.read<HomeCubit>().fetchHomeData(authState.user.id, token ?? ""),
+        context.read<TransactionCubit>().fetchRecentTransactions(authState.user.id),
+        context.read<HomeCubit>().fetchHomeData(authState.user.id),
       ]);
     }
   }
@@ -63,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildHeader(),
                 const SizedBox(height: 32),
 
-                // El Saldo ahora es responsabilidad exclusiva del AuthCubit
                 BlocBuilder<AuthCubit, AuthState>(
                   builder: (context, state) {
                     double balance = 0;
@@ -88,33 +88,53 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 BlocBuilder<VehiclesCubit, VehiclesState>(
                   builder: (context, state) {
-                    List<Vehicle> vehicles = [];
                     if (state is VehiclesLoaded) {
-                      vehicles = state.vehicles;
+                      return PatentesList(vehicles: state.vehicles);
                     } else if (state is VehiclesSuccess) {
-                      vehicles = state.vehicles;
+                      return PatentesList(vehicles: state.vehicles);
                     }
-                    return PatentesList(vehicles: vehicles);
+                    return const PatentesList(vehicles: []);
                   },
                 ),
 
                 const SizedBox(height: 32),
-                Text(
-                  "Actividad reciente",
-                  style: GoogleFonts.nunito(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Actividad reciente",
+                      style: GoogleFonts.nunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                        );
+                      },
+                      child: const Text(
+                        "Ver todos",
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
-
-                BlocBuilder<HomeCubit, HomeState>(
+                
+                BlocBuilder<TransactionCubit, TransactionState>(
                   builder: (context, state) {
-                    if (state is HomeLoading) return const Center(child: CircularProgressIndicator());
-                    if (state is HomeLoaded) return ActividadReciente(actividad: state.actividad);
-                    if (state is HomeError) return Text(state.message);
-                    return const SizedBox();
+                    if (state.isLoadingRecent) return const Center(child: CircularProgressIndicator());
+                    if (state.errorMessage != null && state.recentTransactions.isEmpty) {
+                      return Text(state.errorMessage!);
+                    }
+                    return ActividadReciente(actividad: state.recentTransactions);
                   },
                 ),
                 const SizedBox(height: 40),
@@ -150,13 +170,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-              child: Container(
-                width: 40, height: 40,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                child: Center(child: Text(initial, style: GoogleFonts.nunito(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
-              ),
+            Row(
+              children: [
+                _buildNotificationBell(),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                  child: Container(
+                    width: 40, height: 40,
+                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                    child: Center(child: Text(initial, style: GoogleFonts.nunito(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
+                  ),
+                ),
+              ],
             ),
           ],
         );

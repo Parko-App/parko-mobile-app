@@ -19,6 +19,10 @@ import 'features/home/presentation/bloc/home_cubit.dart';
 import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 import 'features/wallet/data/repositories/wallet_repository_impl.dart';
 import 'features/wallet/domain/repositories/wallet_repository.dart';
+import 'features/transactions/data/datasources/transaction_remote_datasource.dart';
+import 'features/transactions/data/repositories/transaction_repository_impl.dart';
+import 'features/transactions/domain/repositories/transaction_repository.dart';
+import 'features/transactions/presentation/bloc/transaction_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,26 +46,30 @@ class ParkoApp extends StatelessWidget {
     final walletRepository = WalletRepositoryImpl(
       remoteDataSource: WalletRemoteDataSourceImpl(client: httpClient),
     );
+    final transactionRepository = TransactionRepositoryImpl(
+      remoteDataSource: TransactionRemoteDataSourceImpl(client: httpClient),
+    );
 
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>(create: (_) => authRepository),
         RepositoryProvider<VehicleRepository>(create: (_) => vehicleRepository),
         RepositoryProvider<WalletRepository>(create: (_) => walletRepository),
+        RepositoryProvider<TransactionRepository>(create: (_) => transactionRepository),
       ],
       child: MultiBlocProvider(
         providers: [
-          // 1. AuthCubit: Dueño del Usuario y el Saldo Global
           BlocProvider(
             create: (context) => AuthCubit(authRepository: authRepository)..checkAuthStatus(),
           ),
-          // 2. VehiclesCubit: Dueño de la lista sincronizada de autos
           BlocProvider(
             create: (context) => VehiclesCubit(vehicleRepository: vehicleRepository),
           ),
-          // 3. HomeCubit: Dueño de la lógica de pantalla de Inicio (Actividad)
           BlocProvider(
             create: (context) => HomeCubit(),
+          ),
+          BlocProvider(
+            create: (context) => TransactionCubit(transactionRepository: transactionRepository),
           ),
         ],
         child: MaterialApp(

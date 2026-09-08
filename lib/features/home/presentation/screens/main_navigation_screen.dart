@@ -9,6 +9,8 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../transactions/presentation/screens/history_screen.dart';
+import '../../../transactions/presentation/bloc/transaction_cubit.dart';
 import '../bloc/home_cubit.dart';
 import 'home_screen.dart';
 
@@ -26,9 +28,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
+  // Las 4 pantallas principales de la barra
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Center(child: Text("Historial (Próximamente)")),
+    const HistoryScreen(),
     const MyVehiclesScreen(),
     const ProfileScreen(),
   ];
@@ -37,12 +40,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _initDeepLinks();
+    _startTransactionPolling();
   }
 
   @override
   void dispose() {
     _linkSubscription?.cancel();
+    context.read<TransactionCubit>().stopPolling();
     super.dispose();
+  }
+
+  void _startTransactionPolling() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is Authenticated) {
+      // Iniciamos el polling global de movimientos; cada tick también
+      // refresca el balance para que el historial lo muestre actualizado.
+      context.read<TransactionCubit>().startPolling(
+        authState.user.id,
+        onTick: () => context.read<AuthCubit>().refreshProfile(),
+      );
+    }
   }
 
   void _initDeepLinks() {
@@ -66,9 +83,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         message: "Tu saldo se acreditará en unos instantes.",
         isSuccess: true,
       );
-
       context.read<AuthCubit>().refreshProfile();
-
     } else if (status == 'failure') {
       _showPaymentFeedback(
         title: "Pago Fallido",
