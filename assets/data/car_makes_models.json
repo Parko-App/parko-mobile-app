@@ -1,0 +1,20 @@
+{
+  "Volkswagen": ["Gol", "Polo", "Virtus", "Vento", "Amarok", "T-Cross", "Nivus", "Taos", "Suran"],
+  "Chevrolet": ["Onix", "Cruze", "Tracker", "S10", "Prisma", "Spin", "Corsa"],
+  "Ford": ["Fiesta", "Focus", "EcoSport", "Ranger", "Ka", "Territory"],
+  "Fiat": ["Cronos", "Argo", "Mobi", "Toro", "Strada", "Palio", "Uno"],
+  "Renault": ["Sandero", "Logan", "Duster", "Kangoo", "Clio", "Kwid", "Alaskan"],
+  "Peugeot": ["208", "2008", "3008", "Partner", "408"],
+  "Citroën": ["C3", "C4 Cactus", "Berlingo"],
+  "Toyota": ["Corolla", "Hilux", "Etios", "SW4", "Yaris", "RAV4"],
+  "Honda": ["Civic", "HR-V", "Fit", "CR-V"],
+  "Nissan": ["Versa", "Kicks", "Frontier", "March"],
+  "Chery": ["Tiggo 2", "Tiggo 3", "Tiggo 5x", "Tiggo 7", "Arrizo 5"],
+  "Jeep": ["Renegade", "Compass"],
+  "Suzuki": ["Fun", "Baleno", "S-Presso"],
+  "Hyundai": ["HB20", "Creta", "Tucson"],
+  "JAC": ["S2", "T40", "T60"],
+  "Volvo": ["XC40", "XC60"],
+  "BMW": ["Serie 1", "Serie 3", "X1"],
+  "Mercedes-Benz": ["Clase A", "Clase C", "GLA"]
+}
