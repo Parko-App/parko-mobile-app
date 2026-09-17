@@ -86,7 +86,31 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 10),
+
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            child: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.primary),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
                       // Contenedor del logo
                       Container(
                         width: 100, height: 100,
