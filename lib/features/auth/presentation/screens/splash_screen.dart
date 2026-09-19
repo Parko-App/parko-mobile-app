@@ -93,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             ),
 
             Transform.translate(
-              offset: const Offset(-4, 0),
+              offset: const Offset(-12, 0),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(_text.length, (index) {

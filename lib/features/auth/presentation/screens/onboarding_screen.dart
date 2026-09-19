@@ -20,17 +20,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingData(
       title: "Estacionamiento Inteligente",
       description: "Entrá y salí de la UTN sin demoras. Tu patente es tu llave de acceso automática.",
-      imagePath: 'assets/images/onboarding_1.png', // Cámara y Patente
+      imagePath: 'assets/images/onboarding_1.png',
     ),
     OnboardingData(
       title: "Consulta de Ocupación",
       description: "Revisá en tiempo real si hay lugar disponible antes de salir de casa.",
-      imagePath: 'assets/images/onboarding_2.png', // Mapa del estacionamiento
+      imagePath: 'assets/images/onboarding_2.png',
     ),
     OnboardingData(
       title: "Billetera Parko",
       description: "Cargá saldo con Mercado Pago y gestioná tus pagos de forma rápida y segura.",
-      imagePath: 'assets/images/onboarding_3.png', // Billetera y coins
+      imagePath: 'assets/images/onboarding_3.png',
     ),
   ];
 
@@ -46,20 +46,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  height: 32,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.directions_car_filled_rounded,
-                    color: AppColors.primary,
-                    size: 32,
-                  ),
-                ),
                 Transform.translate(
                   offset: const Offset(-2, 0),
                   child: Text(
-                    "arko",
+                    "Parko",
                     style: GoogleFonts.nunito(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
