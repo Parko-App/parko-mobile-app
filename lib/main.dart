@@ -9,7 +9,8 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_cubit.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/presentation/screens/onboarding_screen.dart';
+import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/vehicles/data/datasources/vehicle_remote_datasource.dart';
 import 'features/vehicles/data/repositories/vehicle_repository_impl.dart';
 import 'features/vehicles/domain/repositories/vehicle_repository.dart';
@@ -30,8 +31,15 @@ void main() async {
   runApp(const ParkoApp());
 }
 
-class ParkoApp extends StatelessWidget {
+class ParkoApp extends StatefulWidget {
   const ParkoApp({super.key});
+
+  @override
+  State<ParkoApp> createState() => _ParkoAppState();
+}
+
+class _ParkoAppState extends State<ParkoApp> {
+  bool _showSplash = true;
 
   @override
   Widget build(BuildContext context) {
@@ -76,14 +84,20 @@ class ParkoApp extends StatelessWidget {
           title: 'Parko',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          home: BlocBuilder<AuthCubit, AuthState>(
-            builder: (context, state) {
-              if (state is Authenticated) {
-                return const MainNavigationScreen();
-              }
-              return const LoginScreen();
-            },
-          ),
+          home: _showSplash 
+            ? SplashScreen(onAnimationComplete: () {
+                setState(() {
+                  _showSplash = false;
+                });
+              })
+            : BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state is Authenticated) {
+                    return const MainNavigationScreen();
+                  }
+                  return const OnboardingScreen();
+                },
+              ),
         ),
       ),
     );
