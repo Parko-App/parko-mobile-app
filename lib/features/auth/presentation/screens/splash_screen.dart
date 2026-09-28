@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             _text[index],
                             style: GoogleFonts.nunito(
                               fontSize: 60,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.primary,
                               letterSpacing: -2.0,
                             ),

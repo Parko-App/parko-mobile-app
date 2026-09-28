@@ -38,8 +38,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-
-        if (state is AuthError) {
+        if (state is Authenticated) {
+          setState(() => _isLoading = false);
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (state is AuthError) {
           setState(() => _isLoading = false);
           if(state.message.contains('incorrect, malformed or has expired') ||
               state.message.contains("invalid-credential'")){
