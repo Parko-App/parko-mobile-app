@@ -6,12 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../transactions/presentation/screens/history_screen.dart';
 import '../../../transactions/presentation/bloc/transaction_cubit.dart';
-import '../bloc/home_cubit.dart';
+import '../../../occupancy/presentation/bloc/occupancy_cubit.dart';
+import '../../../occupancy/presentation/bloc/occupancy_state.dart';
+import '../../../occupancy/presentation/screens/occupancy_screen.dart';
 import 'home_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -28,9 +29,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
-  // Las 4 pantallas principales de la barra
   final List<Widget> _screens = [
     const HomeScreen(),
+    const OccupancyScreen(),
     const HistoryScreen(),
     const MyVehiclesScreen(),
     const ProfileScreen(),
@@ -40,35 +41,48 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _initDeepLinks();
-    _startTransactionPolling();
+    _startGlobalListeners();
   }
 
   @override
   void dispose() {
     _linkSubscription?.cancel();
     context.read<TransactionCubit>().stopPolling();
+    context.read<OccupancyCubit>().stopPolling();
     super.dispose();
   }
 
-  void _startTransactionPolling() {
+  void _startGlobalListeners() {
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
-      // Iniciamos el polling global de movimientos; cada tick también
-      // refresca el balance para que el historial lo muestre actualizado.
-      context.read<TransactionCubit>().startPolling(
-        authState.user.id,
-        onTick: () => context.read<AuthCubit>().refreshProfile(),
-      );
+      context.read<TransactionCubit>().startPolling(authState.user.id);
+    }
+  }
+
+  void _onItemTapped(int index) {
+    if (_selectedIndex == index) return;
+
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    final occupancyCubit = context.read<OccupancyCubit>();
+
+    if (index == 1) {
+      if (occupancyCubit.state is! OccupancyLoaded) {
+        occupancyCubit.fetchOccupancy();
+      }
+      occupancyCubit.startPolling();
+    } else {
+      occupancyCubit.stopPolling();
     }
   }
 
   void _initDeepLinks() {
     _appLinks = AppLinks();
-
     _appLinks.getInitialLink().then((uri) {
       if (uri != null) _handleDeepLink(uri);
     });
-
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       _handleDeepLink(uri);
     });
@@ -76,26 +90,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _handleDeepLink(Uri uri) {
     final String status = uri.host;
-
     if (status == 'success') {
-      _showPaymentFeedback(
-        title: "¡Pago Exitoso!",
-        message: "Tu saldo se acreditará en unos instantes.",
-        isSuccess: true,
-      );
+      _showPaymentFeedback(title: "¡Pago Exitoso!", message: "Tu saldo se acreditará en unos instantes.", isSuccess: true);
       context.read<AuthCubit>().refreshProfile();
     } else if (status == 'failure') {
-      _showPaymentFeedback(
-        title: "Pago Fallido",
-        message: "Hubo un error al procesar el pago. Intentá de nuevo.",
-        isSuccess: false,
-      );
+      _showPaymentFeedback(title: "Pago Fallido", message: "Hubo un error al procesar el pago. Intentá de nuevo.", isSuccess: false);
     } else if (status == 'pending') {
-      _showPaymentFeedback(
-        title: "Pago Pendiente",
-        message: "Estamos esperando la confirmación de Mercado Pago.",
-        isSuccess: true,
-      );
+      _showPaymentFeedback(title: "Pago Pendiente", message: "Estamos esperando la confirmación de Mercado Pago.", isSuccess: true);
     }
   }
 
@@ -107,10 +108,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         title: Text(title, style: TextStyle(color: isSuccess ? Colors.green : Colors.red)),
         content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Entendido"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Entendido")),
         ],
       ),
     );
@@ -122,27 +120,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-
         if (_selectedIndex != 0) {
-          setState(() {
-            _selectedIndex = 0;
-          });
+          _onItemTapped(0);
           return;
         }
-
         final now = DateTime.now();
-        if (_lastBackPressTime == null || 
-            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
-          
+        if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
           _lastBackPressTime = now;
-          
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Presioná de nuevo para salir de Parko'),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              margin: const EdgeInsets.only(bottom: 20, left: 24, right: 24),
+            const SnackBar(
+              content: Text('Presioná de nuevo para salir de Parko'),
+              duration: Duration(seconds: 2),
             ),
           );
         } else {
@@ -159,23 +147,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
-              ),
+              )
             ],
           ),
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() => _selectedIndex = index);
-            },
+            onTap: _onItemTapped,
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,
             selectedItemColor: AppColors.primary,
             unselectedItemColor: AppColors.textSecondary.withValues(alpha: 0.5),
             items: const [
               BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Inicio'),
+              BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'Ocupación'),
               BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: 'Historial'),
               BottomNavigationBarItem(icon: Icon(Icons.directions_car_filled_rounded), label: 'Patentes'),
               BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Perfil'),

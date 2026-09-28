@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,6 +23,10 @@ import 'features/transactions/data/datasources/transaction_remote_datasource.dar
 import 'features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'features/transactions/domain/repositories/transaction_repository.dart';
 import 'features/transactions/presentation/bloc/transaction_cubit.dart';
+import 'features/occupancy/data/datasources/occupancy_remote_datasource.dart';
+import 'features/occupancy/data/repositories/occupancy_repository_impl.dart';
+import 'features/occupancy/domain/repositories/occupancy_repository.dart';
+import 'features/occupancy/presentation/bloc/occupancy_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +60,9 @@ class _ParkoAppState extends State<ParkoApp> {
     final transactionRepository = TransactionRepositoryImpl(
       remoteDataSource: TransactionRemoteDataSourceImpl(client: httpClient),
     );
+    final occupancyRepository = OccupancyRepositoryImpl(
+      remoteDataSource: OccupancyRemoteDataSourceImpl(client: httpClient),
+    );
 
     return MultiRepositoryProvider(
       providers: [
@@ -64,6 +70,7 @@ class _ParkoAppState extends State<ParkoApp> {
         RepositoryProvider<VehicleRepository>(create: (_) => vehicleRepository),
         RepositoryProvider<WalletRepository>(create: (_) => walletRepository),
         RepositoryProvider<TransactionRepository>(create: (_) => transactionRepository),
+        RepositoryProvider<OccupancyRepository>(create: (_) => occupancyRepository),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -78,6 +85,9 @@ class _ParkoAppState extends State<ParkoApp> {
           ),
           BlocProvider(
             create: (context) => TransactionCubit(transactionRepository: transactionRepository),
+          ),
+          BlocProvider(
+            create: (context) => OccupancyCubit(),
           ),
         ],
         child: MaterialApp(
