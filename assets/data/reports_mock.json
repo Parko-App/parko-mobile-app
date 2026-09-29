@@ -1,0 +1,77 @@
+{
+  "2026-12": {
+    "totalSpent": 8600,
+    "daysInCampus": 9,
+    "avgStayHours": 3,
+    "avgStayMinutes": 30,
+    "weekAverage": 52,
+    "summaryNote": "Periodo de exámenes finales y cierre de cuatrimestre. Menor afluencia general.",
+    "dailyOccupancy": [
+      {"day": "Lun", "percentage": 58},
+      {"day": "Mar", "percentage": 65},
+      {"day": "Mié", "percentage": 60},
+      {"day": "Jue", "percentage": 45},
+      {"day": "Vie", "percentage": 32}
+    ]
+  },
+  "2026-11": {
+    "totalSpent": 12400,
+    "daysInCampus": 14,
+    "avgStayHours": 4,
+    "avgStayMinutes": 15,
+    "weekAverage": 73,
+    "summaryNote": "Martes y Miércoles registran la mayor saturación del estacionamiento.",
+    "dailyOccupancy": [
+      {"day": "Lun", "percentage": 75},
+      {"day": "Mar", "percentage": 92},
+      {"day": "Mié", "percentage": 88},
+      {"day": "Jue", "percentage": 65},
+      {"day": "Vie", "percentage": 45}
+    ]
+  },
+  "2026-10": {
+    "totalSpent": 18200,
+    "daysInCampus": 19,
+    "avgStayHours": 5,
+    "avgStayMinutes": 10,
+    "weekAverage": 82,
+    "summaryNote": "Mes de exámenes parciales: Lunes y Jueves con ocupación casi máxima.",
+    "dailyOccupancy": [
+      {"day": "Lun", "percentage": 95},
+      {"day": "Mar", "percentage": 84},
+      {"day": "Mié", "percentage": 78},
+      {"day": "Jue", "percentage": 98},
+      {"day": "Vie", "percentage": 55}
+    ]
+  },
+  "2026-09": {
+    "totalSpent": 9800,
+    "daysInCampus": 11,
+    "avgStayHours": 3,
+    "avgStayMinutes": 45,
+    "weekAverage": 64,
+    "summaryNote": "Semana del Estudiante y feriados redujeron la afluencia media.",
+    "dailyOccupancy": [
+      {"day": "Lun", "percentage": 60},
+      {"day": "Mar", "percentage": 72},
+      {"day": "Mié", "percentage": 68},
+      {"day": "Jue", "percentage": 70},
+      {"day": "Vie", "percentage": 50}
+    ]
+  },
+  "2026-08": {
+    "totalSpent": 15600,
+    "daysInCampus": 16,
+    "avgStayHours": 4,
+    "avgStayMinutes": 50,
+    "weekAverage": 78,
+    "summaryNote": "Inicio del cuatrimestre con alta concurrencia en el turno mañana.",
+    "dailyOccupancy": [
+      {"day": "Lun", "percentage": 88},
+      {"day": "Mar", "percentage": 90},
+      {"day": "Mié", "percentage": 82},
+      {"day": "Jue", "percentage": 76},
+      {"day": "Vie", "percentage": 54}
+    ]
+  }
+}
