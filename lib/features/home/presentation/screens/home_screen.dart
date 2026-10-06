@@ -9,16 +9,13 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/presentation/bloc/vehicles_cubit.dart';
 import '../../../vehicles/presentation/bloc/vehicles_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
-import '../../../vehicles/domain/entities/vehicle.dart';
 import '../../../wallet/presentation/screens/top_up_screen.dart';
 import '../../../transactions/presentation/bloc/transaction_cubit.dart';
 import '../../../transactions/presentation/bloc/transaction_state.dart';
 import '../bloc/home_cubit.dart';
-import '../bloc/home_state.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/actividad_reciente.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,15 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 32),
                 _buildPatentesHeader(),
                 const SizedBox(height: 12),
-                
+
                 BlocBuilder<VehiclesCubit, VehiclesState>(
                   builder: (context, state) {
-                    if (state is VehiclesLoaded) {
-                      return PatentesList(vehicles: state.vehicles);
-                    } else if (state is VehiclesSuccess) {
-                      return PatentesList(vehicles: state.vehicles);
-                    }
-                    return const PatentesList(vehicles: []);
+                    return PatentesList(
+                      vehicles: state.vehicles,
+                      isLoading: state is VehiclesLoading,
+                    );
                   },
                 ),
 
@@ -127,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 BlocBuilder<TransactionCubit, TransactionState>(
                   builder: (context, state) {
                     if (state.isLoadingRecent) return const Center(child: CircularProgressIndicator());
@@ -196,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: const Stack(
         children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/transaction.dart';
+import '../utils/ticket_pdf_generator.dart';
 
 class TransactionDetailDialog extends StatelessWidget {
   final Transaction transaction;
@@ -12,7 +13,7 @@ class TransactionDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isExpense = transaction.type == TransactionType.income;
     final String typeText = isExpense ? "pago de estacionamiento" : "carga de saldo";
-    final Color statusColor = isExpense ? Colors.red : Colors.green;
+    final Color statusColor = isExpense ? AppColors.error : AppColors.success;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -24,7 +25,7 @@ class TransactionDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -66,7 +67,29 @@ class TransactionDetailDialog extends StatelessWidget {
               "${isExpense ? '-' : '+'} \$${transaction.amount}",
               valueColor: statusColor,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
+
+            // Botón para Descargar Ticket PDF (Disponible para todos los movimientos)
+            OutlinedButton.icon(
+              onPressed: () {
+                TicketPdfGenerator.generateAndShareTicket(transaction);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
+              label: Text(
+                "Descargar Ticket (PDF)",
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(height: 12),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

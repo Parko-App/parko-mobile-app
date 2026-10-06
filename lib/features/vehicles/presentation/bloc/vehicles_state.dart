@@ -2,31 +2,34 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/vehicle.dart';
 
 abstract class VehiclesState extends Equatable {
-  const VehiclesState();
-  @override
-  List<Object?> get props => [];
-}
+  final List<Vehicle> vehicles;
 
-class VehiclesInitial extends VehiclesState {}
-class VehiclesLoading extends VehiclesState {}
+  const VehiclesState({this.vehicles = const []});
 
-class VehiclesSuccess extends VehiclesState {
-  final List<Vehicle> vehicles; // Llevamos la lista para que la UI no se quede vacía
-  const VehiclesSuccess(this.vehicles);
   @override
   List<Object?> get props => [vehicles];
+}
+
+class VehiclesInitial extends VehiclesState {
+  const VehiclesInitial({super.vehicles});
+}
+
+class VehiclesLoading extends VehiclesState {
+  const VehiclesLoading({super.vehicles});
+}
+
+class VehiclesSuccess extends VehiclesState {
+  const VehiclesSuccess(List<Vehicle> vehicles) : super(vehicles: vehicles);
 }
 
 class VehiclesLoaded extends VehiclesState {
-  final List<Vehicle> vehicles;
-  const VehiclesLoaded(this.vehicles);
-  @override
-  List<Object?> get props => [vehicles];
+  const VehiclesLoaded(List<Vehicle> vehicles) : super(vehicles: vehicles);
 }
 
 class VehiclesError extends VehiclesState {
   final String message;
-  const VehiclesError(this.message);
+  const VehiclesError(this.message, {super.vehicles});
+
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, vehicles];
 }
