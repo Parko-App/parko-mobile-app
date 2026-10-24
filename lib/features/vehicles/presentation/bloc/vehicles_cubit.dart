@@ -11,11 +11,13 @@ class VehiclesCubit extends Cubit<VehiclesState> {
     required this._vehicleRepository,
     firebase.FirebaseAuth? firebaseAuth,
   })  : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
-        super(VehiclesInitial());
+        super(const VehiclesInitial());
 
-  /// Obtiene la lista de vehículos del usuario
+  /// Obtiene la lista de vehículos del usuario preservando el caché de patentes
   Future<void> fetchVehicles(String uuid) async {
-    emit(VehiclesLoading());
+    final currentVehicles = state.vehicles;
+    emit(VehiclesLoading(vehicles: currentVehicles));
+
     try {
       final token = await _firebaseAuth.currentUser?.getIdToken();
       if (token == null) throw Exception("Sesión expirada");
@@ -23,7 +25,10 @@ class VehiclesCubit extends Cubit<VehiclesState> {
       final vehicles = await _vehicleRepository.getUserVehicles(uuid, token);
       emit(VehiclesLoaded(vehicles));
     } catch (e) {
-      emit(VehiclesError(e.toString().replaceFirst('Exception: ', '')));
+      emit(VehiclesError(
+        e.toString().replaceFirst('Exception: ', ''),
+        vehicles: currentVehicles,
+      ));
     }
   }
 
@@ -34,7 +39,8 @@ class VehiclesCubit extends Cubit<VehiclesState> {
     required String brand,
     required String model,
   }) async {
-    emit(VehiclesLoading());
+    final currentVehicles = state.vehicles;
+    emit(VehiclesLoading(vehicles: currentVehicles));
 
     try {
       final user = _firebaseAuth.currentUser;
@@ -56,27 +62,37 @@ class VehiclesCubit extends Cubit<VehiclesState> {
 
       emit(VehiclesSuccess(vehicles));
     } catch (e) {
-      if(e.toString().contains("El recurso ya existe")){
-        emit(VehiclesError("Esa patente ya está registrada"));
+      if (e.toString().contains("El recurso ya existe")) {
+        emit(VehiclesError(
+          "Esa patente ya está registrada",
+          vehicles: currentVehicles,
+        ));
         return;
       }
-      emit(VehiclesError(e.toString().replaceFirst('Exception: ', '')));
+      emit(VehiclesError(
+        e.toString().replaceFirst('Exception: ', ''),
+        vehicles: currentVehicles,
+      ));
     }
   }
 
   /// Elimina un vehículo
   Future<void> deleteVehicle(String vehicleId, String uuid) async {
-    emit(VehiclesLoading());
+    final currentVehicles = state.vehicles;
+    emit(VehiclesLoading(vehicles: currentVehicles));
+
     try {
       final token = await _firebaseAuth.currentUser?.getIdToken();
       if (token == null) throw Exception("Sesión expirada");
 
       await _vehicleRepository.deleteVehicle(vehicleId, token);
-      
-      // Después de eliminar, refrescamos la lista
+
       await fetchVehicles(uuid);
     } catch (e) {
-      emit(VehiclesError(e.toString().replaceFirst('Exception: ', '')));
+      emit(VehiclesError(
+        e.toString().replaceFirst('Exception: ', ''),
+        vehicles: currentVehicles,
+      ));
     }
   }
 }

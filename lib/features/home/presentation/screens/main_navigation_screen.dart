@@ -53,9 +53,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _startGlobalListeners() {
-    final authState = context.read<AuthCubit>().state;
+    final authCubit = context.read<AuthCubit>();
+    final transactionCubit = context.read<TransactionCubit>();
+
+    final authState = authCubit.state;
     if (authState is Authenticated) {
-      context.read<TransactionCubit>().startPolling(authState.user.id);
+      // Polling unico para actualizar el monto y movimientos (ojala lo podamos cambiar mas adelante pollo)
+      transactionCubit.startPolling(
+        authState.user.id,
+        onTick: () => authCubit.refreshProfile(),
+      );
     }
   }
 

@@ -12,10 +12,12 @@ import '../../../transactions/presentation/bloc/transaction_cubit.dart';
 
 class PatentesList extends StatelessWidget {
   final List<Vehicle> vehicles;
+  final bool isLoading;
 
   const PatentesList({
     super.key,
     required this.vehicles,
+    this.isLoading = false,
   });
 
   @override
@@ -25,11 +27,10 @@ class PatentesList extends StatelessWidget {
         context,
         MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
       );
-      
+
       if (result == true && context.mounted) {
         final authState = context.read<AuthCubit>().state;
         if (authState is Authenticated) {
-          // Refrescamos autos y actividad reciente después de agregar uno nuevo
           context.read<VehiclesCubit>().fetchVehicles(authState.user.id);
           context.read<TransactionCubit>().fetchRecentTransactions(authState.user.id);
         }
@@ -37,13 +38,34 @@ class PatentesList extends StatelessWidget {
     }
 
     if (vehicles.isEmpty) {
+      if (isLoading) {
+        return Container(
+          width: double.infinity,
+          height: 100,
+          decoration: BoxDecoration(
+            color: AppColors.inputFieldBackground,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        );
+      }
+
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.inputFieldBackground,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         ),
         child: Column(
           children: [

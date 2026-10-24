@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../vehicles/presentation/screens/my_vehicles_screen.dart';
+import '../../../reports/presentation/screens/reports_screen.dart';
 import 'change_password_screen.dart';
 import 'payment_methods_screen.dart';
 import 'support_screen.dart';
@@ -42,7 +43,6 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             centerTitle: true,
-
             leading: Navigator.of(context).canPop() 
               ? IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20),
@@ -140,6 +140,12 @@ class ProfileScreen extends StatelessWidget {
                 // Sección CUENTA
                 _buildSectionHeader("CUENTA"),
                 _buildMenuContainer([
+                  _buildMenuItem(Icons.bar_chart_rounded, "Mis reportes y estadísticas", onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ReportsScreen()),
+                    );
+                  }),
                   _buildMenuItem(Icons.lock_outline, "Cambiar contraseña", onTap: () {
                     Navigator.push(
                       context,
@@ -172,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
                       onChanged: (value) {
                         context.read<AuthCubit>().toggleNotifications(value);
                       },
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ),
                   _buildMenuItem(Icons.help_outline, "Ayuda y soporte", onTap: () {
@@ -236,12 +242,12 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(children: items),
     );
@@ -253,7 +259,7 @@ class ProfileScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: AppColors.primary, size: 20),
