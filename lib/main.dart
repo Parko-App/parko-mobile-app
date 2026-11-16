@@ -1,21 +1,115 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/data/datasources/auth_remote_datasource.dart';
+import 'features/auth/data/repositories/auth_repository_impl.dart';
+import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/auth/presentation/bloc/auth_cubit.dart';
+import 'features/auth/presentation/bloc/auth_state.dart';
+import 'features/auth/presentation/screens/onboarding_screen.dart';
+import 'features/auth/presentation/screens/splash_screen.dart';
+import 'features/vehicles/data/datasources/vehicle_remote_datasource.dart';
+import 'features/vehicles/data/repositories/vehicle_repository_impl.dart';
+import 'features/vehicles/domain/repositories/vehicle_repository.dart';
+import 'features/vehicles/presentation/bloc/vehicles_cubit.dart';
+import 'features/home/presentation/screens/main_navigation_screen.dart';
+import 'features/home/presentation/bloc/home_cubit.dart';
+import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
+import 'features/wallet/data/repositories/wallet_repository_impl.dart';
+import 'features/wallet/domain/repositories/wallet_repository.dart';
+import 'features/transactions/data/datasources/transaction_remote_datasource.dart';
+import 'features/transactions/data/repositories/transaction_repository_impl.dart';
+import 'features/transactions/domain/repositories/transaction_repository.dart';
+import 'features/transactions/presentation/bloc/transaction_cubit.dart';
+import 'features/occupancy/data/datasources/occupancy_remote_datasource.dart';
+import 'features/occupancy/data/repositories/occupancy_repository_impl.dart';
+import 'features/occupancy/domain/repositories/occupancy_repository.dart';
+import 'features/occupancy/presentation/bloc/occupancy_cubit.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const ParkoApp());
 }
 
-class ParkoApp extends StatelessWidget {
+class ParkoApp extends StatefulWidget {
   const ParkoApp({super.key});
 
   @override
+  State<ParkoApp> createState() => _ParkoAppState();
+}
+
+class _ParkoAppState extends State<ParkoApp> {
+  bool _showSplash = true;
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Parko',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+    final httpClient = http.Client();
+    
+    final authRepository = AuthRepositoryImpl(
+      remoteDataSource: AuthRemoteDataSourceImpl(client: httpClient),
+    );
+    final vehicleRepository = VehicleRepositoryImpl(
+      remoteDataSource: VehicleRemoteDataSourceImpl(client: httpClient),
+    );
+    final walletRepository = WalletRepositoryImpl(
+      remoteDataSource: WalletRemoteDataSourceImpl(client: httpClient),
+    );
+    final transactionRepository = TransactionRepositoryImpl(
+      remoteDataSource: TransactionRemoteDataSourceImpl(client: httpClient),
+    );
+    final occupancyRepository = OccupancyRepositoryImpl(
+      remoteDataSource: OccupancyRemoteDataSourceImpl(client: httpClient),
+    );
+
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AuthRepository>(create: (_) => authRepository),
+        RepositoryProvider<VehicleRepository>(create: (_) => vehicleRepository),
+        RepositoryProvider<WalletRepository>(create: (_) => walletRepository),
+        RepositoryProvider<TransactionRepository>(create: (_) => transactionRepository),
+        RepositoryProvider<OccupancyRepository>(create: (_) => occupancyRepository),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => AuthCubit(authRepository: authRepository)..checkAuthStatus(),
+          ),
+          BlocProvider(
+            create: (context) => VehiclesCubit(vehicleRepository: vehicleRepository),
+          ),
+          BlocProvider(
+            create: (context) => HomeCubit(),
+          ),
+          BlocProvider(
+            create: (context) => TransactionCubit(transactionRepository: transactionRepository),
+          ),
+          BlocProvider(
+            create: (context) => OccupancyCubit(),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Parko',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          home: _showSplash 
+            ? SplashScreen(onAnimationComplete: () {
+                setState(() {
+                  _showSplash = false;
+                });
+              })
+            : BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state is Authenticated) {
+                    return const MainNavigationScreen();
+                  }
+                  return const OnboardingScreen();
+                },
+              ),
+        ),
+      ),
     );
   }
 }
