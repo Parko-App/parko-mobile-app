@@ -2,19 +2,19 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     //defaultValue: 'https://api.parko.site',
-    defaultValue: 'http://10.0.2.2:8080',
+    defaultValue: 'http://192.168.1.13:8080',
   );
 
   static const String balanceBaseUrl = String.fromEnvironment(
     'BALANCE_API_BASE_URL',
     //defaultValue: 'https://api.parko.site',
-    defaultValue: 'http://10.0.2.2:8082',
+    defaultValue: 'http://192.168.1.13:8082',
   );
 
   static const String accessBaseUrl = String.fromEnvironment(
     'ACCESS_API_BASE_URL',
     //defaultValue: 'https://api.parko.site',
-    defaultValue: 'http://10.0.2.2:8081',
+    defaultValue: 'http://192.168.1.13:8081',
   );
 
   static const String userEndpoint = '$baseUrl/api/v1/user';
