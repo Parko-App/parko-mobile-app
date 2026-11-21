@@ -1,20 +1,25 @@
 import 'package:equatable/equatable.dart';
 
 class Occupancy extends Equatable {
-  final int totalCapacity;
-  final int currentOccupancy;
+  final int occupied;
+  final int capacity;
+  final int available;
   final DateTime lastUpdated;
 
   const Occupancy({
-    required this.totalCapacity,
-    required this.currentOccupancy,
+    this.occupied = 0,
+    this.capacity = 100,
+    this.available = 100,
     required this.lastUpdated,
   });
 
-  int get availableSpaces => totalCapacity - currentOccupancy;
-  double get occupancyPercentage => (currentOccupancy / totalCapacity) * 100;
+  // Getters para mantener compatibilidad total con widgets existentes (OccupancyChart, LiveCarAnimation, etc.)
+  int get availableSpaces => available;
+  int get currentOccupancy => occupied;
+  int get totalCapacity => capacity;
+  double get occupancyPercentage => capacity > 0 ? (occupied / capacity) * 100 : 0.0;
   double get availabilityPercentage => 100 - occupancyPercentage;
 
   @override
-  List<Object?> get props => [totalCapacity, currentOccupancy, lastUpdated];
+  List<Object?> get props => [occupied, capacity, available, lastUpdated];
 }
