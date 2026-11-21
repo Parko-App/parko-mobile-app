@@ -2,25 +2,33 @@ import '../../domain/entities/occupancy.dart';
 
 class OccupancyModel extends Occupancy {
   const OccupancyModel({
-    required super.totalCapacity,
-    required super.currentOccupancy,
+    super.occupied,
+    super.capacity,
+    super.available,
     required super.lastUpdated,
   });
 
   factory OccupancyModel.fromJson(Map<String, dynamic> json) {
+    final int occupied = json['occupied'] ?? json['currentOccupancy'] ?? 0;
+    final int capacity = json['capacity'] ?? json['totalCapacity'] ?? 100;
+    final int available = json['available'] ?? (capacity - occupied);
+    final DateTime lastUpdated = json['lastUpdated'] != null
+        ? DateTime.tryParse(json['lastUpdated'].toString()) ?? DateTime.now()
+        : DateTime.now();
+
     return OccupancyModel(
-      totalCapacity: json['totalCapacity'] ?? json['capacity'] ?? 300,
-      currentOccupancy: json['currentOccupancy'] ?? json['occupied'] ?? 0,
-      lastUpdated: json['lastUpdated'] != null
-          ? DateTime.tryParse(json['lastUpdated'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      occupied: occupied,
+      capacity: capacity,
+      available: available,
+      lastUpdated: lastUpdated,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'totalCapacity': totalCapacity,
-      'currentOccupancy': currentOccupancy,
+      'occupied': occupied,
+      'capacity': capacity,
+      'available': available,
       'lastUpdated': lastUpdated.toIso8601String(),
     };
   }

@@ -73,7 +73,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> refreshProfile() async {
     final currentState = state;
     final firebaseUser = _firebaseAuth.currentUser;
-    
+
     if (currentState is Authenticated && firebaseUser != null) {
       try {
         final token = await firebaseUser.getIdToken();

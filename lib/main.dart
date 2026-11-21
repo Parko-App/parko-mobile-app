@@ -87,7 +87,7 @@ class _ParkoAppState extends State<ParkoApp> {
             create: (context) => TransactionCubit(transactionRepository: transactionRepository),
           ),
           BlocProvider(
-            create: (context) => OccupancyCubit(),
+            create: (context) => OccupancyCubit(occupancyRepository: occupancyRepository),
           ),
         ],
         child: MaterialApp(

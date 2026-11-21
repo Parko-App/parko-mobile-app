@@ -21,7 +21,7 @@ class TicketPdfGenerator {
     } else {
       shortId = shortId.toUpperCase();
     }
-    final String ticketNumber = "#TX-$shortId";
+    final String ticketNumber = "#TKT-$shortId";
 
     pdf.addPage(
       pw.Page(
@@ -94,7 +94,7 @@ class TicketPdfGenerator {
                 pw.SizedBox(height: 16),
 
                 // Detalles
-                _buildPdfRow("N° Transacción", ticketNumber, fontRegular, fontBold),
+                _buildPdfRow("N° Ticket", ticketNumber, fontRegular, fontBold),
                 pw.SizedBox(height: 6),
                 _buildPdfRow("Fecha", transaction.date, fontRegular, fontBold),
                 pw.SizedBox(height: 6),
@@ -128,17 +128,7 @@ class TicketPdfGenerator {
                   ],
                 ),
 
-                pw.SizedBox(height: 20),
-                // Código QR de Verificación
-                pw.Center(
-                  child: pw.BarcodeWidget(
-                    barcode: pw.Barcode.qrCode(),
-                    data: "https://parko.site/verify/tx/$shortId",
-                    width: 55,
-                    height: 55,
-                  ),
-                ),
-                pw.SizedBox(height: 8),
+                pw.SizedBox(height: 24),
                 pw.Center(
                   child: pw.Text(
                     "Comprobante oficial emitido por Parko",
