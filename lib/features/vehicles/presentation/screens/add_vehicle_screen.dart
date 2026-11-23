@@ -12,7 +12,7 @@ import '../bloc/vehicles_cubit.dart';
 import '../bloc/vehicles_state.dart';
 
 class AddVehicleScreen extends StatefulWidget {
-  final String? initialPlate; // Patente opcional que puede venir de la pantalla anterior
+  final String? initialPlate;
 
   const AddVehicleScreen({super.key, this.initialPlate});
 
@@ -56,114 +56,94 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     final brands = _carMakesModels.keys.toList()..sort();
     final models = _selectedBrand == null ? <String>[] : (_carMakesModels[_selectedBrand] ?? []);
 
-    return BlocListener<VehiclesCubit, VehiclesState>(
-      listener: (context, state) {
-        if (state is VehiclesSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Vehículo registrado con éxito'),
-              backgroundColor: AppColors.primary,
-            ),
-          );
-          Navigator.pop(context, true);
-        } else if (state is VehiclesError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text("Nueva patente", style: GoogleFonts.nunito(fontWeight: FontWeight.w800)),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Nueva patente", style: GoogleFonts.nunito(fontWeight: FontWeight.w800)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Ingresá los datos de tu vehículo",
-                  style: GoogleFonts.inter(
-                    color: AppColors.textSecondary,
-                    fontSize: 15,
-                  ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Ingresá los datos de tu vehículo",
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
                 ),
-                const SizedBox(height: 32),
+              ),
+              const SizedBox(height: 32),
 
-                CustomTextField(
-                  label: 'Patente / Dominio',
-                  hintText: 'AB123CD | AAA123',
-                  controller: _plateController,
-                  validator: (value) => AppValidators.required(value, 'la patente'),
-                ),
-                const SizedBox(height: 24),
+              CustomTextField(
+                label: 'Patente / Dominio',
+                hintText: 'AB123CD | AAA123',
+                controller: _plateController,
+                validator: (value) => AppValidators.required(value, 'la patente'),
+              ),
+              const SizedBox(height: 24),
 
-                _SelectField(
-                  label: 'Marca',
-                  hint: 'Seleccioná la marca',
-                  value: _selectedBrand,
-                  options: brands,
-                  onChanged: (brand) => setState(() {
-                    _selectedBrand = brand;
-                    _selectedModel = null; // cambia la marca => se pierde el modelo elegido antes
-                    _showBrandError = false;
-                  }),
-                  showError: _showBrandError,
-                  errorText: 'Por favor, seleccioná una marca',
-                ),
-                const SizedBox(height: 24),
+              _SelectField(
+                label: 'Marca',
+                hint: 'Seleccioná la marca',
+                value: _selectedBrand,
+                options: brands,
+                onChanged: (brand) => setState(() {
+                  _selectedBrand = brand;
+                  _selectedModel = null;
+                  _showBrandError = false;
+                }),
+                showError: _showBrandError,
+                errorText: 'Por favor, seleccioná una marca',
+              ),
+              const SizedBox(height: 24),
 
-                _SelectField(
-                  label: 'Modelo',
-                  hint: _selectedBrand == null ? 'Elegí primero la marca' : 'Seleccioná el modelo',
-                  value: _selectedModel,
-                  options: models,
-                  onChanged: (model) => setState(() {
-                    _selectedModel = model;
-                    _showModelError = false;
-                  }),
-                  showError: _showModelError,
-                  errorText: 'Por favor, seleccioná un modelo',
-                ),
+              _SelectField(
+                label: 'Modelo',
+                hint: _selectedBrand == null ? 'Elegí primero la marca' : 'Seleccioná el modelo',
+                value: _selectedModel,
+                options: models,
+                onChanged: (model) => setState(() {
+                  _selectedModel = model;
+                  _showModelError = false;
+                }),
+                showError: _showModelError,
+                errorText: 'Por favor, seleccioná un modelo',
+              ),
 
-                const SizedBox(height: 48),
+              const SizedBox(height: 48),
 
-                BlocBuilder<VehiclesCubit, VehiclesState>(
-                  builder: (context, state) {
-                    final isLoading = state is VehiclesLoading;
+              BlocBuilder<VehiclesCubit, VehiclesState>(
+                builder: (context, state) {
+                  final isLoading = state is VehiclesLoading;
 
-                    return ElevatedButton(
-                      onPressed: isLoading ? null : () => _submitForm(context),
-                      child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Text('Registrar vehículo'),
-                    );
-                  },
-                ),
-              ],
-            ),
+                  return ElevatedButton(
+                    onPressed: isLoading ? null : () => _submitForm(context),
+                    child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text('Registrar vehículo'),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  void _submitForm(BuildContext context) {
+  void _submitForm(BuildContext context) async {
     final isPlateValid = _formKey.currentState!.validate();
 
     setState(() {
@@ -174,18 +154,55 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     if (isPlateValid && _selectedBrand != null && _selectedModel != null) {
       final authState = context.read<AuthCubit>().state;
       if (authState is Authenticated) {
-        context.read<VehiclesCubit>().addVehicle(
-          uuid: authState.user.id,
-          plate: _plateController.text.trim().toUpperCase(),
-          brand: _selectedBrand!,
-          model: _selectedModel!,
-        );
+        final vehiclesCubit = context.read<VehiclesCubit>();
+        final messenger = ScaffoldMessenger.of(context);
+        final navigator = Navigator.of(context);
+        final plateText = _plateController.text.trim().toUpperCase();
+
+        try {
+          await vehiclesCubit.addVehicle(
+            uuid: authState.user.id,
+            plate: plateText,
+            brand: _selectedBrand!,
+            model: _selectedModel!,
+          );
+
+          if (!mounted) return;
+          final currentState = vehiclesCubit.state;
+
+          if (currentState is VehiclesError) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(currentState.message),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            return;
+          }
+
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Vehículo registrado con éxito'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+          navigator.pop(true);
+        } catch (e) {
+          if (!mounted) return;
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceFirst('Exception: ', '')),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
 }
 
-/// Dropdown con el mismo look & feel que el selector de "Carrera / Dominio" del login.
 class _SelectField extends StatelessWidget {
   final String label;
   final String hint;

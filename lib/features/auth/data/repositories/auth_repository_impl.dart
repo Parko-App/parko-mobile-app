@@ -45,7 +45,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User> getUserProfile(String token, String firebaseId) async {
-
     final results = await Future.wait([
       remoteDataSource.getUserProfile(token, firebaseId),
       remoteDataSource.getBalance(token, firebaseId),
@@ -65,8 +64,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User> login({required String email, required String password}) async {
     try {
-      final credential = await firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
-      final firebaseUser = credential.user!;
+      final credential = await firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final firebaseUser = credential.user;
+
+      if (firebaseUser == null) {
+        throw Exception('El legajo, carrera o contraseña son incorrectos');
+      }
 
       return User(
         id: firebaseUser.uid,
@@ -74,7 +80,64 @@ class AuthRepositoryImpl implements AuthRepository {
         email: firebaseUser.email ?? email,
       );
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? 'No se pudo iniciar sesión');
+      switch (e.code) {
+        case 'invalid-credential':
+        case 'wrong-password':
+        case 'user-not-found':
+        case 'invalid-email':
+          throw Exception('El legajo, carrera o contraseña son incorrectos');
+        case 'user-disabled':
+          throw Exception('Esta cuenta ha sido deshabilitada');
+        case 'too-many-requests':
+          throw Exception('Demasiados intentos fallidos. Intentá más tarde');
+        case 'network-request-failed':
+          throw Exception('Sin conexión a internet. Verificá tu red');
+        default:
+          throw Exception(e.message ?? 'El legajo, carrera o contraseña son incorrectos');
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = firebaseAuth.currentUser;
+    if (user == null || user.email == null) {
+      throw Exception('No hay una sesión activa de usuario');
+    }
+
+    try {
+      final cred = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(cred);
+      await user.updatePassword(newPassword);
+
+      // Forzamos la renovación inmediata del ID Token para evitar 401s posteriores
+      await user.getIdToken(true);
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'wrong-password':
+        case 'invalid-credential':
+          throw Exception('La contraseña actual es incorrecta');
+        case 'weak-password':
+          throw Exception('La nueva contraseña es demasiado débil');
+        case 'requires-recent-login':
+          throw Exception('Por seguridad, cerrá sesión e iniciá nuevamente antes de cambiar tu contraseña');
+        case 'network-request-failed':
+          throw Exception('Sin conexión a internet. Verificá tu red e intentá de nuevo');
+        case 'too-many-requests':
+          throw Exception('Demasiados intentos fallidos. Intentá más tarde');
+        default:
+          throw Exception(e.message ?? 'Error al actualizar la contraseña');
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 }

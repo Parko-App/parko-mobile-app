@@ -17,7 +17,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   final _formKey = GlobalKey<FormState>();
 
   final _legajoController = TextEditingController();
@@ -43,27 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.of(context).popUntil((route) => route.isFirst);
         } else if (state is AuthError) {
           setState(() => _isLoading = false);
-          if(state.message.contains('incorrect, malformed or has expired') ||
-              state.message.contains("invalid-credential'")){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('El email o la contraseña con incorrectos'),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-            return;
-          }
-          if(state.message.contains('badly formatted')){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('El formato del correo no es correcto'),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-            return;
-          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
@@ -76,7 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // Círculillos decorativos
             Positioned(top: -100, right: -50, child: _buildDecorativeCircle(250, AppColors.circulos.withValues(alpha: 0.5))),
             Positioned(top: 150, left: -80, child: _buildDecorativeCircle(200, AppColors.circulos.withValues(alpha: 0.5))),
             
@@ -101,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 )
@@ -113,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       const SizedBox(height: 10),
-                      // Contenedor del logo
                       Container(
                         width: 100, height: 100,
                         decoration: BoxDecoration(
@@ -128,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text("Encontrá y pagá tu estacionamiento", style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 15)),
                       const SizedBox(height: 48),
                       
-                      // legajo numerico
                       CustomTextField(
                         label: 'Legajo',
                         hintText: '123456',
@@ -142,7 +118,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
                       
-                      // dropdown dominios
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -226,7 +201,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                           ),
-                          // Mensaje de error manual para el dominio
                           if (_showDomainError && _selectedDomain == null)
                             const Padding(
                               padding: EdgeInsets.only(left: 16, top: 8),
@@ -253,7 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      /// Boton de login
                       ElevatedButton(
                         onPressed: _isLoading
                           ? null
@@ -261,7 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             setState(() => _showDomainError = true);
 
                             final isFormValid = _formKey.currentState!.validate();
-
                             final isDomainValid = _selectedDomain != null;
 
                             if (!isFormValid || !isDomainValid) {
@@ -270,7 +242,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             setState(() => _isLoading = true);
 
-                            // Armamos el email completo
                             final fullEmail = '${_legajoController.text.trim()}@$_selectedDomain.frc.utn.edu.ar';
 
                             await context.read<AuthCubit>().login(

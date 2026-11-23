@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/widgets/text_field.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -30,6 +31,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   void _showConfirmationDialog() {
     if (!_formKey.currentState!.validate()) return;
 
+    final currentPass = _currentPasswordController.text;
+    final newPass = _newPasswordController.text;
+
+    if (currentPass == newPass) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La nueva contraseña debe ser diferente a la actual'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -55,18 +70,35 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Future<void> _handleChangePassword() async {
     setState(() => _isLoading = true);
 
-    // Demorita de red
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Contraseña actualizada con éxito'),
-          backgroundColor: AppColors.primary,
-        ),
+    try {
+      final authCubit = context.read<AuthCubit>();
+      await authCubit.changePassword(
+        currentPassword: _currentPasswordController.text,
+        newPassword: _newPasswordController.text,
       );
-      Navigator.pop(context);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contraseña actualizada con éxito'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        final errorMessage = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
