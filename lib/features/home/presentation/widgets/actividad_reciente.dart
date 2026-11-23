@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../transactions/domain/entities/transaction.dart';
 import '../../../transactions/presentation/widgets/transaction_detail_dialog.dart';
 
@@ -107,18 +110,15 @@ class _ActividadRecienteState extends State<ActividadReciente>
             builder: (context, child) {
               final progress = _newItemController.value;
 
-              // 1. Expansión vertical segura (garantiza t entre 0.0 y 1.0)
               final double heightProgress = (progress / 0.5).clamp(0.0, 1.0);
               final double heightFactor = Curves.easeOutCubic.transform(heightProgress);
 
-              // 2. Entrada deslizante desde el costado derecho sin exceder rangos
               final double slideProgress = ((progress - 0.1) / 0.6).clamp(0.0, 1.0);
               final double slideX = (1.0 - Curves.easeOutCubic.transform(slideProgress)) * 140.0;
 
               final double opacityProgress = ((progress - 0.1) / 0.5).clamp(0.0, 1.0);
               final double opacity = Curves.easeOut.transform(opacityProgress);
 
-              // 3. Destello de color
               final Color highlightColor = isExpense ? AppColors.error : AppColors.success;
               final double glowProgress = (1.0 - progress).clamp(0.0, 1.0);
               final Color cardBgColor = Color.lerp(
@@ -177,6 +177,24 @@ class _ActividadRecienteState extends State<ActividadReciente>
     Color backgroundColor = Colors.white,
     Color? borderColor,
   }) {
+    final authState = context.watch<AuthCubit>().state;
+    final double userBalance = (authState is Authenticated) ? (authState.user.balance ?? 0.0) : 0.0;
+    final bool hasEnoughBalance = userBalance >= tx.amount;
+
+    Color statusColor;
+    IconData iconData;
+
+    if (tx.isPending) {
+      statusColor = hasEnoughBalance ? Colors.amber.shade800 : Colors.orange.shade800;
+      iconData = Icons.pending_outlined;
+    } else if (tx.isFailed) {
+      statusColor = AppColors.error;
+      iconData = Icons.error_outline_rounded;
+    } else {
+      statusColor = isExpense ? AppColors.error : AppColors.success;
+      iconData = isExpense ? Icons.directions_car_filled_outlined : Icons.add_card_outlined;
+    }
+
     return InkWell(
       key: ValueKey(tx.id),
       onTap: () => showTransactionDetail(context, tx),
@@ -187,8 +205,8 @@ class _ActividadRecienteState extends State<ActividadReciente>
           color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: borderColor ?? Colors.black.withValues(alpha: 0.05),
-            width: borderColor != null ? 1.5 : 1.0,
+            color: borderColor ?? (tx.isPending ? Colors.orange.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05)),
+            width: borderColor != null ? 1.5 : (tx.isPending ? 1.2 : 1.0),
           ),
           boxShadow: [
             BoxShadow(
@@ -198,58 +216,151 @@ class _ActividadRecienteState extends State<ActividadReciente>
             )
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (isExpense ? AppColors.error : AppColors.success)
-                    .withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isExpense
-                    ? Icons.directions_car_filled_outlined
-                    : Icons.add_card_outlined,
-                color: isExpense ? AppColors.error : AppColors.success,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tx.title,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  Text(
-                    "${tx.date} • ${tx.time}",
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                  child: Icon(
+                    iconData,
+                    color: statusColor,
+                    size: 20,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tx.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            "${tx.date} • ${tx.time}",
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (!tx.isCompleted) ...[
+                            const SizedBox(width: 8),
+                            Flexible(child: _buildBadge(tx, hasEnoughBalance)),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "${isExpense ? '-' : '+'} \$ ${tx.amount.toStringAsFixed(0)}",
+                  style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: tx.isFailed
+                        ? AppColors.textSecondary
+                        : (tx.isPending ? statusColor : statusColor),
+                    decoration: tx.isFailed ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              "${isExpense ? '-' : '+'} \$ ${tx.amount}",
-              style: GoogleFonts.nunito(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                color: isExpense ? AppColors.error : AppColors.success,
+            if (tx.isPending && isExpense) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: hasEnoughBalance ? const Color(0xFFE8F5E9) : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: hasEnoughBalance ? const Color(0xFFA5D6A7) : Colors.orange.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      hasEnoughBalance ? Icons.info_outline : Icons.warning_amber_rounded,
+                      size: 15,
+                      color: hasEnoughBalance ? const Color(0xFF2E7D32) : Colors.orange.shade900,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        hasEnoughBalance
+                            ? "A la salida se cobrará el estacionamiento."
+                            : "Cargá saldo para poder pagar.",
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: hasEnoughBalance ? const Color(0xFF2E7D32) : Colors.orange.shade900,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildBadge(Transaction tx, bool hasEnoughBalance) {
+    if (tx.isPending) {
+      final String label = tx.type == TransactionType.income
+          ? (hasEnoughBalance ? "Pendiente de cobro" : "Saldo insuficiente")
+          : "Acreditación pendiente";
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: hasEnoughBalance ? Colors.blue.shade50 : Colors.orange.shade100,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: hasEnoughBalance ? AppColors.primary : Colors.orange.shade900,
+          ),
+        ),
+      );
+    } else if (tx.isFailed) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          "Carga fallida",
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.error),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }
 
@@ -280,53 +391,88 @@ class _AnimatedTransactionItem extends StatelessWidget {
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutCubic,
             padding: EdgeInsets.only(top: isReady ? 0.0 : 12.0),
-            child: InkWell(
-              onTap: () => showTransactionDetail(context, tx),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
+            child: _buildTransactionTileContent(context),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTransactionTileContent(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state;
+    final double userBalance = (authState is Authenticated) ? (authState.user.balance ?? 0.0) : 0.0;
+    final bool hasEnoughBalance = userBalance >= tx.amount;
+
+    Color statusColor;
+    IconData iconData;
+
+    if (tx.isPending) {
+      statusColor = hasEnoughBalance ? Colors.amber.shade800 : Colors.orange.shade800;
+      iconData = Icons.pending_outlined;
+    } else if (tx.isFailed) {
+      statusColor = AppColors.error;
+      iconData = Icons.error_outline_rounded;
+    } else {
+      statusColor = isExpense ? AppColors.error : AppColors.success;
+      iconData = isExpense ? Icons.directions_car_filled_outlined : Icons.add_card_outlined;
+    }
+
+    return InkWell(
+      onTap: () => showTransactionDetail(context, tx),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: tx.isPending ? Colors.orange.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
+            width: tx.isPending ? 1.2 : 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    iconData,
+                    color: statusColor,
+                    size: 20,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: (isExpense ? AppColors.error : AppColors.success)
-                            .withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tx.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                      child: Icon(
-                        isExpense
-                            ? Icons.directions_car_filled_outlined
-                            : Icons.add_card_outlined,
-                        color: isExpense ? AppColors.error : AppColors.success,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
-                          Text(
-                            tx.title,
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
                           Text(
                             "${tx.date} • ${tx.time}",
                             style: GoogleFonts.inter(
@@ -334,24 +480,107 @@ class _AnimatedTransactionItem extends StatelessWidget {
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          if (!tx.isCompleted) ...[
+                            const SizedBox(width: 8),
+                            Flexible(child: _buildBadge(tx, hasEnoughBalance)),
+                          ],
                         ],
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "${isExpense ? '-' : '+'} \$ ${tx.amount.toStringAsFixed(0)}",
+                  style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: tx.isFailed
+                        ? AppColors.textSecondary
+                        : (tx.isPending ? statusColor : statusColor),
+                    decoration: tx.isFailed ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ],
+            ),
+            if (tx.isPending && isExpense) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: hasEnoughBalance ? const Color(0xFFE8F5E9) : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: hasEnoughBalance ? const Color(0xFFA5D6A7) : Colors.orange.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      hasEnoughBalance ? Icons.info_outline : Icons.warning_amber_rounded,
+                      size: 15,
+                      color: hasEnoughBalance ? const Color(0xFF2E7D32) : Colors.orange.shade900,
                     ),
-                    Text(
-                      "${isExpense ? '-' : '+'} \$ ${tx.amount}",
-                      style: GoogleFonts.nunito(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: isExpense ? AppColors.error : AppColors.success,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        hasEnoughBalance
+                            ? "A la salida se cobrará el estacionamiento."
+                            : "Cargá saldo para poder pagar.",
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: hasEnoughBalance ? const Color(0xFF2E7D32) : Colors.orange.shade900,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            ],
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildBadge(Transaction tx, bool hasEnoughBalance) {
+    if (tx.isPending) {
+      final String label = tx.type == TransactionType.income
+          ? (hasEnoughBalance ? "Pendiente de cobro" : "Saldo insuficiente")
+          : "Acreditación pendiente";
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: hasEnoughBalance ? Colors.blue.shade50 : Colors.orange.shade100,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: hasEnoughBalance ? AppColors.primary : Colors.orange.shade900,
+          ),
+        ),
+      );
+    } else if (tx.isFailed) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          "Carga fallida",
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.error),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }

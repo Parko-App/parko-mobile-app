@@ -58,7 +58,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     final authState = authCubit.state;
     if (authState is Authenticated) {
-      // Polling unico para actualizar el monto y movimientos (ojala lo podamos cambiar mas adelante pollo)
       transactionCubit.startPolling(
         authState.user.id,
         onTick: () => authCubit.refreshProfile(),
@@ -97,13 +96,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _handleDeepLink(Uri uri) {
     final String status = uri.host;
+    final authState = context.read<AuthCubit>().state;
+
     if (status == 'success') {
       _showPaymentFeedback(title: "¡Pago Exitoso!", message: "Tu saldo se acreditará en unos instantes.", isSuccess: true);
-      context.read<AuthCubit>().refreshProfile();
+      if (authState is Authenticated) {
+        context.read<AuthCubit>().refreshProfile();
+        context.read<TransactionCubit>().fetchRecentTransactions(authState.user.id);
+      }
     } else if (status == 'failure') {
       _showPaymentFeedback(title: "Pago Fallido", message: "Hubo un error al procesar el pago. Intentá de nuevo.", isSuccess: false);
     } else if (status == 'pending') {
       _showPaymentFeedback(title: "Pago Pendiente", message: "Estamos esperando la confirmación de Mercado Pago.", isSuccess: true);
+      if (authState is Authenticated) {
+        context.read<AuthCubit>().refreshProfile();
+        context.read<TransactionCubit>().fetchRecentTransactions(authState.user.id);
+      }
     }
   }
 

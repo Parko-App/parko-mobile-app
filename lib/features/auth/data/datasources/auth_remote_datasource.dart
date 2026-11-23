@@ -30,9 +30,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await client.get(
         url,
-        headers: {'Content-Type': 'application/json',
-                  'Authorization': 'Bearer $token'},
-
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -53,14 +54,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await client.get(
         url,
-        headers: {'Content-Type': 'application/json',
-                  'Authorization': 'Bearer $token'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       if (response.statusCode == 200) {
         return UserModel.fromJson(jsonDecode(response.body));
       } else {
-        throw Exception('Usuario no encontrado en el backend');
+        throw Exception('Usuario no encontrado en el backend (${response.statusCode})');
       }
     } catch (_) {
       throw Exception('El servidor no está disponible en este momento');
@@ -80,20 +83,22 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     http.Response response;
     try {
+      final body = jsonEncode({
+        'fullName': name,
+        'email': email,
+        'studentId': studentId,
+        'password': password,
+        'institutionalDomain': institutionalDomain,
+        'termsAndConditionsAccepted': termsAccepted,
+      });
+
       response = await client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'fullName': name,
-          'email': email,
-          'studentId': studentId,
-          'password': password,
-          'institutionalDomain': institutionalDomain,
-          'termsAndConditionsAccepted': termsAccepted,
-        }),
+        body: body,
       );
-    } catch (_) {
-      throw Exception('No se pudo conectar con el servidor');
+    } catch (e) {
+      throw Exception('No se pudo conectar con el servidor ($e)');
     }
 
     if (response.statusCode == 201) {
@@ -107,9 +112,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final body = jsonDecode(response.body);
       if (body is Map && body['message'] != null) {
-        return body['message'] as String;
+        return '${body['message']} (${response.statusCode})';
       }
     } catch (_) {}
-    return 'Error al registrar usuario (${response.statusCode})';
+    return 'Error al registrar usuario en el backend (${response.statusCode}): ${response.body}';
   }
 }

@@ -23,6 +23,18 @@ class TicketPdfGenerator {
     }
     final String ticketNumber = "#TKT-$shortId";
 
+    String statusLabel = "Completado";
+    if (transaction.isPending) {
+      statusLabel = isExpense ? "Pendiente de pago" : "Acreditación pendiente";
+    } else if (transaction.isFailed) {
+      statusLabel = "Carga fallida";
+    }
+
+    String provider = transaction.paymentProvider ?? (isExpense ? "Saldo de Parko" : "Mercado Pago");
+    if (provider.toLowerCase() == 'internal_balance' || provider.toLowerCase() == 'internalbalance') {
+      provider = 'Saldo de Parko';
+    }
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a6,
@@ -96,6 +108,10 @@ class TicketPdfGenerator {
                 // Detalles
                 _buildPdfRow("N° Ticket", ticketNumber, fontRegular, fontBold),
                 pw.SizedBox(height: 6),
+                _buildPdfRow("Método de pago", provider, fontRegular, fontBold),
+                pw.SizedBox(height: 6),
+                _buildPdfRow("Estado", statusLabel, fontRegular, fontBold),
+                pw.SizedBox(height: 6),
                 _buildPdfRow("Fecha", transaction.date, fontRegular, fontBold),
                 pw.SizedBox(height: 6),
                 _buildPdfRow("Hora", transaction.time, fontRegular, fontBold),
@@ -128,7 +144,7 @@ class TicketPdfGenerator {
                   ],
                 ),
 
-                pw.SizedBox(height: 24),
+                pw.SizedBox(height: 20),
                 pw.Center(
                   child: pw.Text(
                     "Comprobante oficial emitido por Parko",

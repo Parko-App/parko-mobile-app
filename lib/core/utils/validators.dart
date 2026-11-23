@@ -14,8 +14,9 @@ class AppValidators {
     'sae', 'scdt', 'sistemas', 'tecnicatura', 'virtual',
   ];
 
+  // Expresión regular que admite legajos numéricos de 1 a 7 dígitos (incluyendo los que empiezan con '0')
   static final _institutionalEmailRegExp =
-      RegExp(r'^([1-9][0-9]{0,4})@(?:([a-z]+)\.)?frc\.utn\.edu\.ar$');
+      RegExp(r'^([0-9]{1,7})@(?:([a-z]+)\.)?frc\.utn\.edu\.ar$');
 
   /// Validador de correo institucional de la UTN FRC
   /// Soporta dominios tipo @carrera.frc.utn.edu.ar
@@ -36,11 +37,16 @@ class AppValidators {
   }
 
   static String studentIdFromEmail(String email) {
-    return _institutionalEmailRegExp.firstMatch(email.toLowerCase())!.group(1)!;
+    final match = _institutionalEmailRegExp.firstMatch(email.toLowerCase());
+    if (match != null && match.group(1) != null) {
+      return match.group(1)!;
+    }
+    return email.split('@').first;
   }
 
   static String institutionalDomainFromEmail(String email) {
-    final domain = _institutionalEmailRegExp.firstMatch(email.toLowerCase())!.group(2);
+    final match = _institutionalEmailRegExp.firstMatch(email.toLowerCase());
+    final domain = match?.group(2);
     return (domain ?? 'frc').toUpperCase();
   }
 
