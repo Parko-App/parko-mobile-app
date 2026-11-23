@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import '../../domain/entities/transaction.dart';
 import '../../domain/repositories/transaction_repository.dart';
 import 'transaction_state.dart';
 
@@ -8,6 +9,23 @@ class TransactionCubit extends Cubit<TransactionState> {
   final TransactionRepository _transactionRepository;
   final firebase.FirebaseAuth _firebaseAuth;
   Timer? _pollingTimer;
+
+
+  // simulacion de una transaccion pendiente para ajustar UI
+  // cambiar a false o borrar este bloque
+
+  static const bool _SIMULATE_PENDING = true;
+
+  static const _mockPendingTx = Transaction(
+    id: 'mock-pending-001',
+    title: 'Estacionamiento',
+    amount: 1500.0,
+    date: 'Hoy',
+    time: '14:35',
+    type: TransactionType.income,
+    status: TransactionStatus.pending,
+    paymentProvider: 'Saldo de Parko',
+  );
 
   TransactionCubit({
     required TransactionRepository transactionRepository,
@@ -34,13 +52,18 @@ class TransactionCubit extends Cubit<TransactionState> {
     _pollingTimer = null;
   }
 
+  List<Transaction> _withMockIfNeeded(List<Transaction> original) {
+    if (_SIMULATE_PENDING) {
+      return [_mockPendingTx, ...original];
+    }
+    return original;
+  }
+
   Future<void> _refreshAll(String userId) async {
     try {
       final token = await _firebaseAuth.currentUser?.getIdToken();
       if (token == null) return;
 
-      // Se disparan juntas para que corran en paralelo; se esperan por separado
-      // porque devuelven tipos distintos (List<Transaction> vs TransactionPage).
       final recentFuture = _transactionRepository.getRecentTransactions(userId, token);
       final monthlyFuture = _transactionRepository.getMonthlyTransactions(
         userId,
@@ -55,8 +78,8 @@ class TransactionCubit extends Cubit<TransactionState> {
 
       if (!isClosed) {
         emit(state.copyWith(
-          recentTransactions: recent,
-          monthlyTransactions: monthly.items,
+          recentTransactions: _withMockIfNeeded(recent),
+          monthlyTransactions: _withMockIfNeeded(monthly.items),
           monthlyPage: monthly.page,
           monthlyTotalPages: monthly.totalPages,
           isLoadingRecent: false,
@@ -76,11 +99,18 @@ class TransactionCubit extends Cubit<TransactionState> {
       final transactions = await _transactionRepository.getRecentTransactions(userId, token);
 
       emit(state.copyWith(
-        recentTransactions: transactions,
+        recentTransactions: _withMockIfNeeded(transactions),
         isLoadingRecent: false,
       ));
     } catch (e) {
-      emit(state.copyWith(isLoadingRecent: false, errorMessage: e.toString()));
+      if (_SIMULATE_PENDING) {
+        emit(state.copyWith(
+          recentTransactions: [_mockPendingTx],
+          isLoadingRecent: false,
+        ));
+      } else {
+        emit(state.copyWith(isLoadingRecent: false, errorMessage: e.toString()));
+      }
     }
   }
 
@@ -98,13 +128,20 @@ class TransactionCubit extends Cubit<TransactionState> {
       final result = await _transactionRepository.getMonthlyTransactions(userId, token, month, year, page: page);
 
       emit(state.copyWith(
-        monthlyTransactions: result.items,
+        monthlyTransactions: _withMockIfNeeded(result.items),
         monthlyPage: result.page,
         monthlyTotalPages: result.totalPages,
         isLoadingMonthly: false,
       ));
     } catch (e) {
-      emit(state.copyWith(isLoadingMonthly: false, errorMessage: e.toString()));
+      if (_SIMULATE_PENDING) {
+        emit(state.copyWith(
+          monthlyTransactions: [_mockPendingTx],
+          isLoadingMonthly: false,
+        ));
+      } else {
+        emit(state.copyWith(isLoadingMonthly: false, errorMessage: e.toString()));
+      }
     }
   }
 

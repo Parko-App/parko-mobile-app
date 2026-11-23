@@ -5,6 +5,7 @@ import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../transactions/presentation/bloc/transaction_cubit.dart';
 import '../../domain/repositories/wallet_repository.dart';
 import '../bloc/wallet_cubit.dart';
 import '../bloc/wallet_state.dart';
@@ -50,7 +51,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
 
   Future<void> _launchMercadoPago(BuildContext context, String url) async {
     final authCubit = context.read<AuthCubit>();
-    
+    final transactionCubit = context.read<TransactionCubit>();
+
     try {
       await launchUrl(
         Uri.parse(url),
@@ -67,14 +69,19 @@ class _TopUpScreenState extends State<TopUpScreen> {
         ),
       );
 
+      if (!mounted) return;
       await authCubit.refreshProfile();
-      
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo abrir el navegador')),
-        );
+
+      if (!mounted) return;
+      final authState = authCubit.state;
+      if (authState is Authenticated) {
+        transactionCubit.fetchRecentTransactions(authState.user.id);
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el navegador')),
+      );
     }
   }
 
@@ -115,7 +122,6 @@ class _TopUpScreenState extends State<TopUpScreen> {
           ),
           body: BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
-              // El saldo siempre se lee del AuthCubit
               double currentBalance = widget.initialBalance;
               if (authState is Authenticated) {
                 currentBalance = authState.user.balance ?? widget.initialBalance;
@@ -182,9 +188,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00B1EA).withOpacity(0.05),
+                        color: const Color(0xFF00B1EA).withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF00B1EA).withOpacity(0.1)),
+                        border: Border.all(color: const Color(0xFF00B1EA).withValues(alpha: 0.1)),
                       ),
                       child: Row(
                         children: [
@@ -219,7 +225,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                             : () {
                               if (authState is Authenticated) {
                                 context.read<WalletCubit>().prepareTopUp(
-                                  uuid: authState.user.id, // ID del backend
+                                  uuid: authState.user.id,
                                   amount: _selectedAmount,
                                 );
                               }
@@ -251,12 +257,12 @@ class _TopUpScreenState extends State<TopUpScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.black.withOpacity(0.05),
+            color: isSelected ? AppColors.primary : Colors.black.withValues(alpha: 0.05),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
