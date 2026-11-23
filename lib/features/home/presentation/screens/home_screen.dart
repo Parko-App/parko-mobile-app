@@ -262,54 +262,69 @@ class _HomeScreenState extends State<HomeScreen> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text("Hola,", style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
-                Text(
-                  name,
-                  style: GoogleFonts.nunito(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.18),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 4),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
+                  child: const Center(
+                    child: Image(
+                      image: AssetImage('assets/images/logo.png'),
+                      width: 28,
+                      height: 28,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Hola,", style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                    Text(
+                      name,
+                      style: GoogleFonts.nunito(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            Row(
-              children: [
-                _buildNotificationBell(),
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                  child: Container(
-                    width: 40, height: 40,
-                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                    child: Center(child: Text(initial, style: GoogleFonts.nunito(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
-                  ),
-                ),
-              ],
+            GestureDetector(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+              child: Container(
+                width: 40, height: 40,
+                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                child: Center(child: Text(initial, style: GoogleFonts.nunito(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
+              ),
             ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildNotificationBell() {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: const Stack(
-        children: [
-          Icon(Icons.notifications_none_outlined, color: AppColors.textSecondary),
-          Positioned(right: 0, top: 0, child: CircleAvatar(radius: 4, backgroundColor: AppColors.error)),
-        ],
-      ),
     );
   }
 

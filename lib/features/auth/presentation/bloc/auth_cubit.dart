@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/entities/user.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -9,9 +8,10 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
 
   AuthCubit({
-    required this._authRepository,
+    required AuthRepository authRepository,
     firebase.FirebaseAuth? firebaseAuth,
-  })  : _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
+  })  : _authRepository = authRepository,
+        _firebaseAuth = firebaseAuth ?? firebase.FirebaseAuth.instance,
         super(AuthInitial());
 
   Future<void> checkAuthStatus() async {
@@ -19,28 +19,39 @@ class AuthCubit extends Cubit<AuthState> {
     if (firebaseUser != null) {
       try {
         final token = await firebaseUser.getIdToken();
-        final user = await _authRepository.getUserProfile(token!, firebaseUser.uid);
-        emit(Authenticated(user));
+        if (token != null) {
+          final user = await _authRepository.getUserProfile(token, firebaseUser.uid);
+          emit(Authenticated(user));
+          return;
+        }
       } catch (e) {
         await logout();
         emit(Unauthenticated());
+        return;
       }
-    } else {
-      emit(Unauthenticated());
     }
+    emit(Unauthenticated());
   }
 
   Future<void> login(String email, String password) async {
     emit(AuthLoading());
     try {
       final userFromFirebase = await _authRepository.login(email: email, password: password);
-      final token = await _firebaseAuth.currentUser?.getIdToken();
-      // userFromFirebase.id es el UID de Firebase (ver repositorio)
-      final userFull = await _authRepository.getUserProfile(token!, userFromFirebase.id);
-      emit(Authenticated(userFull));
+      final firebaseUser = _firebaseAuth.currentUser;
+      final token = await firebaseUser?.getIdToken();
+
+      if (firebaseUser != null && token != null) {
+        try {
+          final userFull = await _authRepository.getUserProfile(token, firebaseUser.uid);
+          emit(Authenticated(userFull));
+          return;
+        } catch (_) {}
+      }
+
+      emit(Authenticated(userFromFirebase));
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
-      await logout();
+      final rawError = e.toString().replaceFirst('Exception: ', '');
+      emit(AuthError(rawError));
     }
   }
 
@@ -53,20 +64,42 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(AuthLoading());
     try {
-      final user = await _authRepository.register(
+      final registeredUser = await _authRepository.register(
         name: name,
         email: email,
         password: password,
         termsAccepted: termsAccepted,
         legajo: legajo,
       );
-      final token = await _firebaseAuth.currentUser?.getIdToken();
+
       final firebaseUser = _firebaseAuth.currentUser;
-      final userFull = await _authRepository.getUserProfile(token!, firebaseUser!.uid);
-      emit(Authenticated(userFull));
+      final token = await firebaseUser?.getIdToken();
+
+      if (firebaseUser != null && token != null) {
+        try {
+          final userFull = await _authRepository.getUserProfile(token, firebaseUser.uid);
+          emit(Authenticated(userFull));
+          return;
+        } catch (_) {
+          // Si falla la llamada al backend para obtener el perfil extendido, usamos el usuario registrado
+        }
+      }
+
+      emit(Authenticated(registeredUser));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
     }
+  }
+
+  /// Cambia la contraseña del usuario autenticado
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _authRepository.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
   }
 
   /// Refresca los datos del usuario (saldo incluido) desde el backend

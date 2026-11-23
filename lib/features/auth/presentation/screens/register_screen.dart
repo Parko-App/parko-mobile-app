@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../profile/presentation/screens/terms_screen.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../widgets/text_field.dart';
@@ -74,7 +75,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // Círculos decorativos
             Positioned(top: -100, right: -50, child: _buildDecorativeCircle(250, AppColors.circulos.withValues(alpha: 0.5))),
             Positioned(top: 150, left: -80, child: _buildDecorativeCircle(200, AppColors.circulos.withValues(alpha: 0.5))),
             
@@ -88,7 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       const SizedBox(height: 10),
                       
-                      // Botón de volver
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
@@ -108,7 +107,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Text("Unite a la comunidad de Parko", style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 15)),
                       const SizedBox(height: 32),
                       
-                      // Campo: Nombre completo
                       CustomTextField(
                         label: 'Nombre completo',
                         hintText: 'Perita Perazolo',
@@ -117,7 +115,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
                       
-                      // Campo: Legajo (ahora obligatorio para el mail)
                       CustomTextField(
                         label: 'Legajo',
                         hintText: '123456',
@@ -131,7 +128,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 24),
                       
-                      // Selector de Carrera / Dominio
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -206,7 +202,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
                       
-                      // Campo: Contraseña
                       CustomTextField(
                         label: 'Contraseña',
                         hintText: '••••••••',
@@ -225,7 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Checkbox de términos
+                      // Checkbox de términos con link interactivo a la pantalla de Términos y Condiciones
                       Row(
                         children: [
                           SizedBox(
@@ -238,12 +233,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(child: Text('Acepto los términos y condiciones', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14))),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TermsScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text.rich(
+                                TextSpan(
+                                  text: 'Acepto los ',
+                                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
+                                  children: [
+                                    TextSpan(
+                                      text: 'términos y condiciones',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w700,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 32),
                       
-                      // Botón de crear cuenta
                       ElevatedButton(
                         onPressed: (_isLoading || !_acceptTerms)
                           ? null
@@ -251,7 +272,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             setState(() => _showDomainError = true);
                             if (!_formKey.currentState!.validate() || _selectedDomain == null) return;
 
-                            // Armamos el email institucional
                             final fullEmail = '${_legajoController.text.trim()}@$_selectedDomain.frc.utn.edu.ar';
 
                             context.read<AuthCubit>().registerUser(

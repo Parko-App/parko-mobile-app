@@ -21,4 +21,10 @@ abstract class AuthRepository {
 
   /// Obtiene el saldo del usuario
   Future<double> getBalance(String token, String firebaseId);
+
+  /// Cambia la contraseña del usuario autenticado
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

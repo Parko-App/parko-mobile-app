@@ -67,7 +67,6 @@ class VehiclesCubit extends Cubit<VehiclesState> {
           "Esa patente ya está registrada",
           vehicles: currentVehicles,
         ));
-        return;
       }
       emit(VehiclesError(
         e.toString().replaceFirst('Exception: ', ''),
